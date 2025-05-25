@@ -1,72 +1,148 @@
-<?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:padding="16dp"
-    android:background="?android:attr/windowBackground">
+package com.example.whatsappcleanerpro
 
-    <TextView
-        android:id="@+id/tvTitle"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="WhatsApp Cleaner Pro"
-        android:textSize="28sp"
-        android:textStyle="bold"
-        android:textColor="@color/black"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+import android.os.Bundle
+import android.os.Environment
+import android.widget.Button
+import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
+import androidx.work.*
+import java.io.File
+import java.util.concurrent.TimeUnit
 
-    <TextView
-        android:id="@+id/tvStorageInfo"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="Storage Used by WhatsApp Files: Calculating..."
-        android:textSize="16sp"
-        android:textColor="@color/black"
-        android:layout_marginTop="12dp"
-        app:layout_constraintTop_toBottomOf="@id/tvTitle"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+class MainActivity : AppCompatActivity() {
 
-    <Button
-        android:id="@+id/btnCleanCache"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="Clean WhatsApp Cache"
-        android:layout_marginTop="24dp"
-        android:backgroundTint="@color/purple_500"
-        android:textColor="@android:color/white"
-        android:padding="12dp"
-        app:layout_constraintTop_toBottomOf="@id/tvStorageInfo"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+    private lateinit var tvStorageInfo: TextView
+    private lateinit var tvStatus: TextView
+    private lateinit var btnCleanCache: Button
+    private lateinit var btnAutoClean: Button
 
-    <Button
-        android:id="@+id/btnAutoClean"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="Enable Auto Clean (Daily)"
-        android:layout_marginTop="16dp"
-        android:backgroundTint="@color/purple_700"
-        android:textColor="@android:color/white"
-        android:padding="12dp"
-        app:layout_constraintTop_toBottomOf="@id/btnCleanCache"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+    private val workTag = "whatsapp_auto_clean"
 
-    <TextView
-        android:id="@+id/tvStatus"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text=""
-        android:textSize="14sp"
-        android:textColor="@color/green_700"
-        android:layout_marginTop="16dp"
-        app:layout_constraintTop_toBottomOf="@id/btnAutoClean"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        tvStorageInfo = findViewById(R.id.tvStorageInfo)
+        tvStatus = findViewById(R.id.tvStatus)
+        btnCleanCache = findViewById(R.id.btnCleanCache)
+        btnAutoClean = findViewById(R.id.btnAutoClean)
+
+        updateStorageInfo()
+        updateAutoCleanButton()
+
+        btnCleanCache.setOnClickListener {
+            cleanWhatsAppCache()
+        }
+
+        btnAutoClean.setOnClickListener {
+            toggleAutoClean()
+        }
+    }
+
+    private fun updateStorageInfo() {
+        val sizeBytes = getWhatsAppCacheSize()
+        val sizeMb = sizeBytes / (1024.0 * 1024.0)
+        tvStorageInfo.text = "Storage Used by WhatsApp Files: %.2f MB".format(sizeMb)
+    }
+
+    private fun getWhatsAppCacheSize(): Long {
+        // WhatsApp cache folders: usually in /storage/emulated/0/WhatsApp/Media and Cache folders
+        val basePaths = listOf(
+            Environment.getExternalStorageDirectory().absolutePath + "/WhatsApp/Media",
+            Environment.getExternalStorageDirectory().absolutePath + "/WhatsApp/Cache"
+        )
+        var totalSize = 0L
+        for (path in basePaths) {
+            totalSize += getFolderSize(File(path))
+        }
+        return totalSize
+    }
+
+    private fun getFolderSize(dir: File): Long {
+        if (!dir.exists() || !dir.isDirectory) return 0L
+        var size = 0L
+        val files = dir.listFiles() ?: return 0L
+        for (file in files) {
+            size += if (file.isDirectory) getFolderSize(file) else file.length()
+        }
+        return size
+    }
+
+    private fun cleanWhatsAppCache() {
+        tvStatus.text = "Cleaning WhatsApp cache..."
+        val cleaned = deleteWhatsAppCache()
+        if (cleaned) {
+            tvStatus.text = "WhatsApp cache cleaned successfully."
+        } else {
+            tvStatus.text = "No WhatsApp cache files found or failed to clean."
+        }
+        updateStorageInfo()
+    }
+
+    private fun deleteWhatsAppCache(): Boolean {
+        val basePaths = listOf(
+            Environment.getExternalStorageDirectory().absolutePath + "/WhatsApp/Media",
+            Environment.getExternalStorageDirectory().absolutePath + "/WhatsApp/Cache"
+        )
+        var anyDeleted = false
+        for (path in basePaths) {
+            val deleted = deleteFolderContents(File(path))
+            if (deleted) anyDeleted = true
+        }
+        return anyDeleted
+    }
+
+    private fun deleteFolderContents(dir: File): Boolean {
+        if (!dir.exists() || !dir.isDirectory) return false
+        var deletedAny = false
+        val files = dir.listFiles() ?: return false
+        for (file in files) {
+            deletedAny = if (file.isDirectory) {
+                val innerDeleted = deleteFolderContents(file)
+                if (file.delete()) true else innerDeleted
+            } else {
+                file.delete() || deletedAny
+            } || deletedAny
+        }
+        return deletedAny
+    }
+
+    private fun toggleAutoClean() {
+        val workManager = WorkManager.getInstance(applicationContext)
+        val isEnabled = isAutoCleanEnabled()
+        if (isEnabled) {
+            workManager.cancelAllWorkByTag(workTag)
+            tvStatus.text = "Auto clean disabled."
+        } else {
+            val constraints = Constraints.Builder()
+                .setRequiresCharging(false)
+                .setRequiresBatteryNotLow(true)
+                .build()
+            val cleanRequest = PeriodicWorkRequestBuilder<AutoCleanWorker>(1, TimeUnit.DAYS)
+                .setConstraints(constraints)
+                .addTag(workTag)
+                .build()
+            workManager.enqueueUniquePeriodicWork(
+                workTag,
+                ExistingPeriodicWorkPolicy.REPLACE,
+                cleanRequest
+            )
+            tvStatus.text = "Auto clean enabled: will run daily."
+        }
+        updateAutoCleanButton()
+    }
+
+    private fun updateAutoCleanButton() {
+        btnAutoClean.text = if (isAutoCleanEnabled()) {
+            "Disable Auto Clean"
+        } else {
+            "Enable Auto Clean (Daily)"
+        }
+    }
+
+    private fun isAutoCleanEnabled(): Boolean {
+        val workManager = WorkManager.getInstance(applicationContext)
+        val statuses = workManager.getWorkInfosByTag(workTag).get()
+        return statuses.any { it.state == WorkInfo.State.ENQUEUED || it.state == WorkInfo.State.RUNNING }
+    }
+}
