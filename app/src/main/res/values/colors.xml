@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary brand colors -->
+    <color name="colorPrimary">#0D47A1</color> <!-- Dark Blue -->
+    <color name="colorPrimaryVariant">#1565C0</color> <!-- Medium Blue -->
+    <color name="colorSecondary">#0288D1</color> <!-- Light Blue -->
+
+    <!-- Background colors -->
+    <color name="colorBackground">#FFFFFF</color> <!-- White -->
+    <color name="colorSurface">#F5F5F5</color> <!-- Light Grey -->
+
+    <!-- Text colors -->
+    <color name="colorOnPrimary">#FFFFFF</color> <!-- White text on primary -->
+    <color name="colorOnBackground">#212121</color> <!-- Dark Grey text on background -->
+    <color name="colorOnSurface">#757575</color> <!-- Medium Grey for secondary text -->
+
+    <!-- Accent colors -->
+    <color name="colorAccent">#FF5722</color> <!-- Deep Orange for highlights -->
+
+    <!-- Error -->
+    <color name="colorError">#B00020</color> <!-- Material error red -->
+
+    <!-- Divider and border -->
+    <color name="colorDivider">#BDBDBD</color> <!-- Light Grey divider -->
+
+    <!-- Disabled state -->
+    <color name="colorDisabled">#9E9E9E</color> <!-- Grey for disabled controls -->
+</resources>
