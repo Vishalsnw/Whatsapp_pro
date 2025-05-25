@@ -18,14 +18,6 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Generate debug keystore
-        run: |
-          keytool -genkey -v -keystore debug.keystore -storepass android \
-            -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 \
-            -dname "CN=Android Debug,O=Android,C=US"
-          mkdir -p .github/keystore
-          mv debug.keystore .github/keystore/debug.keystore
-
       - name: Cache Gradle
         uses: actions/cache@v3
         with:
@@ -39,14 +31,31 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
-      - name: Build signed release APK
-        run: ./gradlew assembleRelease --stacktrace
+      - name: Generate debug keystore
+        run: |
+          mkdir -p .github/keystore
+          keytool -genkey -v -keystore .github/keystore/debug.keystore \
+            -alias androiddebugkey -storepass android -keypass android \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US"
 
-      - name: List built APKs
-        run: ls -la app/build/outputs/apk/release/
+      - name: Debug: List keystore
+        run: ls -la .github/keystore
 
-      - name: Upload signed APK
+      - name: Build release APK using debug signing
+        run: ./gradlew assembleRelease --stacktrace --warning-mode all
+
+      - name: Verify APK location
+        run: ls -R app/build/outputs/apk/
+
+      - name: Upload release APK
         uses: actions/upload-artifact@v4
         with:
-          name: WhatsAppCleanerPro-Signed-APK
+          name: WhatsAppCleanerPro-APK
           path: app/build/outputs/apk/release/app-release.apk
+
+      - name: Upload generated debug keystore
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-keystore
+          path: .github/keystore/debug.keystore
