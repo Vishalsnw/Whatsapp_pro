@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/scrollViewSettings"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Auto-clean Interval -->
+        <TextView
+            android:id="@+id/tvAutoCleanLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Auto-Clean Interval"
+            android:textAppearance="?attr/textAppearanceHeadline6"
+            android:paddingBottom="8dp" />
+
+        <Spinner
+            android:id="@+id/spinnerAutoCleanInterval"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="?attr/colorControlHighlight"
+            android:layout_marginVertical="16dp" />
+
+        <!-- File Types to Include/Exclude -->
+        <TextView
+            android:id="@+id/tvFileTypesLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Select File Types to Clean"
+            android:textAppearance="?attr/textAppearanceHeadline6"
+            android:paddingBottom="8dp" />
+
+        <!-- File type checkboxes -->
+        <CheckBox
+            android:id="@+id/cbImages"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Images (JPG, PNG)" />
+
+        <CheckBox
+            android:id="@+id/cbVideos"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Videos (MP4, AVI)" />
+
+        <CheckBox
+            android:id="@+id/cbAudios"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Audio (MP3, WAV)" />
+
+        <CheckBox
+            android:id="@+id/cbDocuments"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Documents (PDF, DOC)" />
+
+        <CheckBox
+            android:id="@+id/cbArchives"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Archives (ZIP, RAR)" />
+
+        <!-- Save Button -->
+        <Button
+            android:id="@+id/btnSaveSettings"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Save Settings"
+            android:layout_marginTop="24dp" />
+
+    </LinearLayout>
+
+</ScrollView>
