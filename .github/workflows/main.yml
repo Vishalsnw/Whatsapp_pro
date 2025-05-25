@@ -1,11 +1,11 @@
-name: Build Android APK 
+name: Build Android APK
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    name: Build APK
+    name: Build and Sign APK
     runs-on: ubuntu-latest
 
     steps:
@@ -39,23 +39,22 @@ jobs:
             -keyalg RSA -keysize 2048 -validity 10000 \
             -dname "CN=Android Debug,O=Android,C=US"
 
-      - name: Debug: List keystore
-        run: ls -la .github/keystore
-
-      - name: Build release APK using debug signing
+      - name: Build release APK
         run: ./gradlew assembleRelease --stacktrace --warning-mode all
 
-      - name: Verify APK location
-        run: ls -R app/build/outputs/apk/
+      - name: Sign APK with debug keystore
+        run: |
+          jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 \
+            -keystore .github/keystore/debug.keystore \
+            -storepass android -keypass android \
+            app/build/outputs/apk/release/app-release-unsigned.apk androiddebugkey
 
-      - name: Upload release APK
+      - name: Rename signed APK
+        run: |
+          mv app/build/outputs/apk/release/app-release-unsigned.apk app/build/outputs/apk/release/app-release-signed.apk
+
+      - name: Upload signed APK
         uses: actions/upload-artifact@v4
         with:
-          name: WhatsAppCleanerPro-APK
-          path: app/build/outputs/apk/release/app-release.apk
-
-      - name: Upload generated debug keystore
-        uses: actions/upload-artifact@v4
-        with:
-          name: debug-keystore
-          path: .github/keystore/debug.keystore
+          name: WhatsAppCleanerPro-Signed-APK
+          path: app/build/outputs/apk/release/app-release-signed.apk
