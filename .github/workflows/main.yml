@@ -18,6 +18,14 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      - name: Generate debug keystore
+        run: |
+          keytool -genkey -v -keystore debug.keystore -storepass android \
+            -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US"
+          mkdir -p .github/keystore
+          mv debug.keystore .github/keystore/debug.keystore
+
       - name: Cache Gradle
         uses: actions/cache@v3
         with:
@@ -31,28 +39,14 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
-      - name: Generate debug keystore (if not exists)
-        run: |
-          if [ ! -f "$GITHUB_WORKSPACE/debug.keystore" ]; then
-            keytool -genkeypair -v \
-              -keystore $GITHUB_WORKSPACE/debug.keystore \
-              -storepass android \
-              -alias androiddebugkey \
-              -keypass android \
-              -keyalg RSA \
-              -keysize 2048 \
-              -validity 10000 \
-              -dname "CN=Android Debug,O=Android,C=US"
-          fi
+      - name: Build signed release APK
+        run: ./gradlew assembleRelease --stacktrace
 
-      - name: Build release APK
-        run: ./gradlew assembleRelease --stacktrace --warning-mode all
-
-      - name: Show APK path
+      - name: List built APKs
         run: ls -la app/build/outputs/apk/release/
 
-      - name: Upload release APK
+      - name: Upload signed APK
         uses: actions/upload-artifact@v4
         with:
-          name: WhatsAppCleanerPro-APK
+          name: WhatsAppCleanerPro-Signed-APK
           path: app/build/outputs/apk/release/app-release.apk
