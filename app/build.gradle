@@ -24,18 +24,9 @@ android {
         jvmTarget = "17"
     }
 
-    signingConfigs {
-        debug {
-            storeFile file("$rootDir/debug.keystore")
-            storePassword "android"
-            keyAlias "androiddebugkey"
-            keyPassword "android"
-        }
-    }
-
     buildTypes {
         release {
-            signingConfig signingConfigs.debug // Use debug key to sign release for installable APK
+            // Remove signingConfig if you're not signing release with a custom key
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
