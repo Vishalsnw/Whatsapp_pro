@@ -25,9 +25,12 @@ android {
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.0"
 
+    // Exclude old lifecycle-livedata and resourceinspection modules
     implementation('androidx.appcompat:appcompat:1.6.1') {
+        exclude group: 'androidx.lifecycle', module: 'lifecycle-livedata'
         exclude group: 'androidx.resourceinspection', module: 'resourceinspection-annotation'
     }
 
     implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.6.2' // latest compatible version
 }
