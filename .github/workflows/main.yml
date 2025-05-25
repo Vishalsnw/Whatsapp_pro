@@ -42,19 +42,28 @@ jobs:
       - name: Build release APK
         run: ./gradlew assembleRelease --stacktrace --warning-mode all
 
-      - name: Sign APK with debug keystore
+      - name: Install zipalign and apksigner
         run: |
-          jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 \
-            -keystore .github/keystore/debug.keystore \
-            -storepass android -keypass android \
-            app/build/outputs/apk/release/app-release-unsigned.apk androiddebugkey
+          sudo apt-get update
+          sudo apt-get install -y zipalign
+          echo "Available build-tools:"
+          ls $ANDROID_HOME/build-tools
+          export BUILD_TOOLS_VERSION=$(ls $ANDROID_HOME/build-tools | sort -r | head -n 1)
+          echo "Using build-tools version: $BUILD_TOOLS_VERSION"
 
-      - name: Rename signed APK
+      - name: Zipalign and Sign APK with apksigner
         run: |
-          mv app/build/outputs/apk/release/app-release-unsigned.apk app/build/outputs/apk/release/app-release-signed.apk
+          ZIPALIGN=$(find $ANDROID_HOME/build-tools -name zipalign | sort -r | head -n 1)
+          APKSIGNER=$(find $ANDROID_HOME/build-tools -name apksigner | sort -r | head -n 1)
+          $ZIPALIGN -v -p 4 app/build/outputs/apk/release/app-release-unsigned.apk aligned.apk
+          $APKSIGNER sign --ks .github/keystore/debug.keystore \
+            --ks-pass pass:android \
+            --key-pass pass:android \
+            --out app-release-signed.apk \
+            aligned.apk
 
       - name: Upload signed APK
         uses: actions/upload-artifact@v4
         with:
           name: WhatsAppCleanerPro-Signed-APK
-          path: app/build/outputs/apk/release/app-release-signed.apk
+          path: app-release-signed.apk
