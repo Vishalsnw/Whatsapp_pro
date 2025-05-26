@@ -39,8 +39,20 @@ jobs:
             -keyalg RSA -keysize 2048 -validity 10000 \
             -dname "CN=Android Debug,O=Android,C=US"
 
-      - name: Build release APK (with detailed logs)
-        run: ./gradlew assembleRelease --stacktrace --debug --info
+      - name: Build release APK (save full log)
+        run: |
+          ./gradlew assembleRelease --stacktrace --debug --info > full_build_log.txt 2>&1 || (
+            echo "===== BUILD FAILED. Showing last 100 lines of log ====="
+            tail -n 100 full_build_log.txt
+            exit 1
+          )
+
+      - name: Upload full build log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Build-Failure-Log
+          path: full_build_log.txt
 
       - name: List APK output folder (verify build output)
         run: ls -la app/build/outputs/apk/release/
