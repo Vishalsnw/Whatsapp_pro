@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">WhatsApp Cleaner Pro</string>
+    <string name="category_icon">Category</string>
+    <string name="delete">Delete</string>
 </resources>
