@@ -1,28 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Primary brand colors -->
-    <color name="colorPrimary">#0D47A1</color> <!-- Dark Blue -->
-    <color name="colorPrimaryVariant">#1565C0</color> <!-- Medium Blue -->
-    <color name="colorSecondary">#0288D1</color> <!-- Light Blue -->
+    <color name="colorPrimary">#0D47A1</color>
+    <color name="colorPrimaryVariant">#1565C0</color>
+    <color name="colorSecondary">#0288D1</color>
 
     <!-- Background colors -->
-    <color name="colorBackground">#FFFFFF</color> <!-- White -->
-    <color name="colorSurface">#F5F5F5</color> <!-- Light Grey -->
+    <color name="colorBackground">#FFFFFF</color>
+    <color name="colorSurface">#F5F5F5</color>
 
     <!-- Text colors -->
-    <color name="colorOnPrimary">#FFFFFF</color> <!-- White text on primary -->
-    <color name="colorOnBackground">#212121</color> <!-- Dark Grey text on background -->
-    <color name="colorOnSurface">#757575</color> <!-- Medium Grey for secondary text -->
+    <color name="colorOnPrimary">#FFFFFF</color>
+    <color name="colorOnBackground">#212121</color>
+    <color name="colorOnSurface">#757575</color>
 
-    <!-- Accent colors -->
-    <color name="colorAccent">#FF5722</color> <!-- Deep Orange for highlights -->
+    <!-- Accent -->
+    <color name="colorAccent">#FF5722</color>
 
     <!-- Error -->
-    <color name="colorError">#B00020</color> <!-- Material error red -->
+    <color name="colorError">#B00020</color>
 
-    <!-- Divider and border -->
-    <color name="colorDivider">#BDBDBD</color> <!-- Light Grey divider -->
+    <!-- Extra (commonly used) colors -->
+    <color name="colorDivider">#BDBDBD</color>
+    <color name="colorDisabled">#9E9E9E</color>
 
-    <!-- Disabled state -->
-    <color name="colorDisabled">#9E9E9E</color> <!-- Grey for disabled controls -->
+    <!-- Missing direct references -->
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="purple_500">#6200EE</color>
+    <color name="purple_700">#3700B3</color>
+    <color name="green_700">#388E3C</color>
 </resources>
