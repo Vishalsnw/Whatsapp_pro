@@ -1,5 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">WhatsApp Cleaner Pro</string>
-    <string name="category_icon">Category</string>
+
+    <!-- New required strings -->
+    <string name="category_icon">Category Icon</string>
     <string name="delete">Delete</string>
+
+    <!-- Optional additional strings -->
+    <string name="enable_auto_clean">Enable Auto Clean (Daily)</string>
+    <string name="disable_auto_clean">Disable Auto Clean</string>
+    <string name="cleaning_now">Cleaning WhatsApp cache...</string>
+    <string name="clean_success">WhatsApp cache cleaned successfully.</string>
+    <string name="clean_failed">No WhatsApp cache files found or failed to clean.</string>
 </resources>
