@@ -39,22 +39,23 @@ jobs:
             -keyalg RSA -keysize 2048 -validity 10000 \
             -dname "CN=Android Debug,O=Android,C=US"
 
-      - name: Build release APK
-        run: ./gradlew assembleRelease --stacktrace --warning-mode all
+      - name: Build release APK (with detailed logs)
+        run: ./gradlew assembleRelease --stacktrace --debug --info
 
-      - name: Install zipalign and apksigner
+      - name: List APK output folder (verify build output)
+        run: ls -la app/build/outputs/apk/release/
+
+      - name: Install zipalign and apksigner (if not present)
         run: |
           sudo apt-get update
           sudo apt-get install -y zipalign
-          echo "Available build-tools:"
-          ls $ANDROID_HOME/build-tools
-          export BUILD_TOOLS_VERSION=$(ls $ANDROID_HOME/build-tools | sort -r | head -n 1)
-          echo "Using build-tools version: $BUILD_TOOLS_VERSION"
 
-      - name: Zipalign and Sign APK with apksigner
+      - name: Zipalign and Sign APK
         run: |
           ZIPALIGN=$(find $ANDROID_HOME/build-tools -name zipalign | sort -r | head -n 1)
           APKSIGNER=$(find $ANDROID_HOME/build-tools -name apksigner | sort -r | head -n 1)
+          echo "Using zipalign: $ZIPALIGN"
+          echo "Using apksigner: $APKSIGNER"
           $ZIPALIGN -v -p 4 app/build/outputs/apk/release/app-release-unsigned.apk aligned.apk
           $APKSIGNER sign --ks .github/keystore/debug.keystore \
             --ks-pass pass:android \
