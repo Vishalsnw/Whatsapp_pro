@@ -3,9 +3,9 @@
     xmlns:card_view="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    card_view:cardCornerRadius="12dp"
     android:layout_margin="8dp"
-    android:elevation="4dp">
+    card_view:cardCornerRadius="12dp"
+    card_view:cardElevation="4dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -19,7 +19,8 @@
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:layout_marginEnd="12dp"
-            android:src="@drawable/ic_file" />
+            android:src="@drawable/ic_file"
+            android:contentDescription="File Icon" />
 
         <LinearLayout
             android:layout_width="0dp"
@@ -32,7 +33,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="filename.jpg"
-                android:textColor="#000"
+                android:textColor="@android:color/black"
                 android:textSize="16sp"
                 android:maxLines="1"
                 android:ellipsize="end" />
@@ -42,7 +43,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="512 KB"
-                android:textColor="#777"
+                android:textColor="#777777"
                 android:textSize="12sp" />
         </LinearLayout>
 
