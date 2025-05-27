@@ -39,8 +39,9 @@ jobs:
             -keyalg RSA -keysize 2048 -validity 10000 \
             -dname "CN=Android Debug,O=Android,C=US"
 
-      - name: Build release APK (save full log)
+      - name: Clean and Build APK (save full log)
         run: |
+          ./gradlew clean --refresh-dependencies
           ./gradlew assembleRelease --stacktrace --debug --info > full_build_log.txt 2>&1 || (
             echo "===== BUILD FAILED. Showing last 100 lines of log ====="
             tail -n 100 full_build_log.txt
