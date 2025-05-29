@@ -14,9 +14,7 @@ android {
         versionCode 1
         versionName "1.0"
 
-        buildFeatures {
-            viewBinding true
-        }
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     signingConfigs {
@@ -39,20 +37,8 @@ android {
         }
     }
 
-    // ✅ Tell Gradle to use only `java/` for Kotlin files too
-    sourceSets {
-        main {
-            java.srcDirs = ['src/main/java']
-            kotlin.srcDirs = []  // prevent searching in /main/kotlin
-        }
-        debug {
-            java.srcDirs = ['src/debug/java']
-            kotlin.srcDirs = []  // prevent searching in /debug/kotlin
-        }
-        release {
-            java.srcDirs = ['src/release/java']
-            kotlin.srcDirs = []  // prevent searching in /release/kotlin
-        }
+    buildFeatures {
+        viewBinding true
     }
 
     compileOptions {
