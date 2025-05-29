@@ -14,7 +14,6 @@ android {
         versionCode 1
         versionName "1.0"
 
-        // Enable view binding
         buildFeatures {
             viewBinding true
         }
@@ -40,9 +39,10 @@ android {
         }
     }
 
-    // Fix path issue - ensure Gradle doesn't look for non-existent kotlin dirs
+    // ✅ This tells Gradle to use only 'java/' directories
     sourceSets {
         main.java.srcDirs = ['src/main/java']
+        debug.java.srcDirs = ['src/debug/java']
         release.java.srcDirs = ['src/release/java']
     }
 
