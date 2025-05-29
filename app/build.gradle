@@ -39,11 +39,11 @@ android {
         }
     }
 
-    // ✅ Avoid scanning unused or empty kotlin folders
+    // ✅ Only look for source files in `java/`, disable `kotlin/` folders
     sourceSets {
         main {
             java.srcDirs = ['src/main/java']
-            kotlin.srcDirs = [] // prevent fallback to src/main/kotlin
+            kotlin.srcDirs = []
         }
         debug {
             java.srcDirs = ['src/debug/java']
