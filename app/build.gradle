@@ -39,11 +39,20 @@ android {
         }
     }
 
-    // ✅ This tells Gradle to use only 'java/' directories
+    // ✅ Avoid scanning unused or empty kotlin folders
     sourceSets {
-        main.java.srcDirs = ['src/main/java']
-        debug.java.srcDirs = ['src/debug/java']
-        release.java.srcDirs = ['src/release/java']
+        main {
+            java.srcDirs = ['src/main/java']
+            kotlin.srcDirs = [] // prevent fallback to src/main/kotlin
+        }
+        debug {
+            java.srcDirs = ['src/debug/java']
+            kotlin.srcDirs = []
+        }
+        release {
+            java.srcDirs = ['src/release/java']
+            kotlin.srcDirs = []
+        }
     }
 
     compileOptions {
