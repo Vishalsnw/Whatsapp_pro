@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    name: Build and Sign APK
+    name: Clean Build and Sign APK
     runs-on: ubuntu-latest
 
     steps:
@@ -39,26 +39,29 @@ jobs:
             -keyalg RSA -keysize 2048 -validity 10000 \
             -dname "CN=Android Debug,O=Android,C=US"
 
-      - name: Clean and Build APK (save full log)
+      - name: Clean project and force fresh dependencies
         run: |
           ./gradlew clean --refresh-dependencies
+
+      - name: Build APK and save full log
+        run: |
           ./gradlew assembleRelease --stacktrace --debug --info > full_build_log.txt 2>&1 || (
             echo "===== BUILD FAILED. Showing last 100 lines of log ====="
             tail -n 100 full_build_log.txt
             exit 1
           )
 
-      - name: Upload full build log
+      - name: Upload build log (on failure)
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: Build-Failure-Log
           path: full_build_log.txt
 
-      - name: List APK output folder (verify build output)
+      - name: List APK output folder
         run: ls -la app/build/outputs/apk/release/
 
-      - name: Install zipalign and apksigner (if not present)
+      - name: Install zipalign and apksigner tools
         run: |
           sudo apt-get update
           sudo apt-get install -y zipalign
@@ -76,7 +79,7 @@ jobs:
             --out app-release-signed.apk \
             aligned.apk
 
-      - name: Upload signed APK
+      - name: Upload final signed APK
         uses: actions/upload-artifact@v4
         with:
           name: WhatsAppCleanerPro-Signed-APK
