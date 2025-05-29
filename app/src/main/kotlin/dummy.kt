@@ -1,3 +1,3 @@
 package com.example.whatsappcleanerpro
 
-// Dummy file to keep directory structure
+class Dummy
