@@ -39,19 +39,19 @@ android {
         }
     }
 
-    // ✅ Only look for source files in `java/`, disable `kotlin/` folders
+    // ✅ Tell Gradle to use only `java/` for Kotlin files too
     sourceSets {
         main {
             java.srcDirs = ['src/main/java']
-            kotlin.srcDirs = []
+            kotlin.srcDirs = []  // prevent searching in /main/kotlin
         }
         debug {
             java.srcDirs = ['src/debug/java']
-            kotlin.srcDirs = []
+            kotlin.srcDirs = []  // prevent searching in /debug/kotlin
         }
         release {
             java.srcDirs = ['src/release/java']
-            kotlin.srcDirs = []
+            kotlin.srcDirs = []  // prevent searching in /release/kotlin
         }
     }
 
