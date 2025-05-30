@@ -1,3 +1,8 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+}
+
 android {
     namespace 'com.example.whatsappcleanerpro'
     compileSdk 34
@@ -45,14 +50,11 @@ android {
         jvmTarget = "17"
     }
 
-    // <-- Add this explicitly to tell Gradle where your Kotlin source files actually are
     sourceSets {
         main {
             java {
-                // Kotlin files are under src/main/java, so only point here
                 setSrcDirs(listOf("src/main/java"))
             }
-            // Disable looking into kotlin source dirs that don't exist
             kotlin {
                 setSrcDirs(emptyList())
             }
