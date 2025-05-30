@@ -53,26 +53,26 @@ android {
     sourceSets {
         main {
             java {
-                setSrcDirs(listOf("src/main/java"))
+                setSrcDirs(['src/main/java'])
             }
             kotlin {
-                setSrcDirs(emptyList())
+                setSrcDirs([])
             }
         }
         release {
             java {
-                setSrcDirs(listOf("src/main/java"))
+                setSrcDirs(['src/main/java'])
             }
             kotlin {
-                setSrcDirs(emptyList())
+                setSrcDirs([])
             }
         }
         debug {
             java {
-                setSrcDirs(listOf("src/main/java"))
+                setSrcDirs(['src/main/java'])
             }
             kotlin {
-                setSrcDirs(emptyList())
+                setSrcDirs([])
             }
         }
     }
