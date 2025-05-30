@@ -49,6 +49,18 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+
+    sourceSets {
+        main {
+            java.srcDirs = ['src/main/java']
+        }
+        release {
+            java.srcDirs = []  // no release-specific source dirs
+        }
+        debug {
+            java.srcDirs = []  // no debug-specific source dirs
+        }
+    }
 }
 
 dependencies {
