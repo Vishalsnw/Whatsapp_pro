@@ -50,6 +50,11 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+
+    // 👇 This is the important fix for GitHub Actions Kotlin path issue
+    sourceSets {
+        main.java.srcDirs += 'src/main/java'
+    }
 }
 
 dependencies {
