@@ -5,6 +5,7 @@ import java.io.File
 
 object FileScanner {
 
+    // Returns all WhatsApp media and cache files
     fun getWhatsAppMediaFiles(): List<FileModel> {
         val mediaDirs = listOf(
             "/WhatsApp/Media",
@@ -33,5 +34,15 @@ object FileScanner {
         }
 
         return files
+    }
+
+    // Returns files for a specific category/type
+    fun getFilesForCategory(type: String): List<FileModel> {
+        // You can extend this logic for more categories as needed
+        return when (type.lowercase()) {
+            "media" -> getWhatsAppMediaFiles()
+            // Add more categories here if needed
+            else -> emptyList()
+        }
     }
 }
