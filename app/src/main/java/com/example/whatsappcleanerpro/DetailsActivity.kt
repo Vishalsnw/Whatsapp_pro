@@ -29,7 +29,7 @@ class DetailsActivity : AppCompatActivity() {
         }
 
         val categoryDir = File(categoryPath)
-        if (!categoryDir.exists() || !categoryDir.isDirectory) {
+        if (!categoryDir.existscategoryDir.isDirectory) {
             Toast.makeText(this, "No files found", Toast.LENGTH_SHORT).show()
             finish()
             return
@@ -46,17 +46,18 @@ class DetailsActivity : AppCompatActivity() {
             }?.toMutableList() ?: mutableListOf()
 
         adapter = FileAdapter(filesList) { fileModel ->
-            handleDeleteFile(fileModel)
+            // Inline delete logic since handleDeleteFile was unresolved
+            val index = filesList.indexOf(fileModel)
+            if (index != -1 && fileModel.file.delete()) {
+                Toast.makeText(this, "Deleted: ${fileModel.name}", Toast.LENGTH_SHORT).show()
+                filesList.removeAt(index)
+                adapter.notifyItemRemoved(index)
+            } else {
+                Toast.makeText(this, "Failed to delete: ${fileModel.name}", Toast.LENGTH_SHORT).show()
+            }
         }
 
         binding.detailsRecyclerView.layoutManager = LinearLayoutManager(this)
         binding.detailsRecyclerView.adapter = adapter
- fun handleDeleteFile(fileModel: FileModel) {
-        val index = filesList.indexOf(fileModel)
-        if (index != -1 && fileModel.file.delete()) {
-            Toast.makeText(this, "Deleted: ${fileModel.name}", Toast.LENGTH_SHORT).show()
-            filesList.removeAt(index)
-            adapter.notify.makeText(this, "Failed to delete: ${fileModel.name}", Toast.LENGTH_SHORT).show()
-        }
     }
-    }
+}
