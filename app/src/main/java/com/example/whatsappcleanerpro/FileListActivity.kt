@@ -6,6 +6,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import java.io.File
 
 class FileListActivity : AppCompatActivity() {
 
@@ -31,7 +32,7 @@ class FileListActivity : AppCompatActivity() {
 
         adapter = FileAdapter(
             files = fileList,
-            onDeleteClicked = { fileModel ->
+            onDeleteClicked = { fileModel: FileModel ->
                 fileModel.file.delete()
                 fileList.remove(fileModel)
                 adapter.notifyDataSetChanged()
@@ -42,7 +43,7 @@ class FileListActivity : AppCompatActivity() {
         recyclerView.adapter = adapter
 
         deleteButton.setOnClickListener {
-            val selected = adapter.getSelectedFiles() // This method must be implemented in FileAdapter!
+            val selected: List<FileModel> = adapter.getSelectedFiles()
             for (fileModel in selected) {
                 fileModel.file.delete()
                 fileList.remove(fileModel)
