@@ -54,12 +54,24 @@ jobs:
             exit 1
           )
 
+      - name: Extract actual errors from build log
+        if: failure()
+        run: |
+          # Grep for lines that look like real errors
+          grep -E '(^e: .*\.(kt|java):[0-9]+:[0-9]+|error:|Unresolved reference:|cannot find symbol|Exception|Caused by:|Execution failed for task|resource linking failed|resource .+ not found)' full_build_log.txt > errors_only.txt || true
+          # Always upload at least something, even if no matches
+          if [ ! -s errors_only.txt ]; then
+            echo "No specific error lines found. Check full_build_log.txt for more details." > errors_only.txt
+          fi
+
       - name: Upload build log (on failure)
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: Build-Failure-Log
-          path: full_build_log.txt
+          path: |
+            full_build_log.txt
+            errors_only.txt
 
       - name: List APK output folder
         run: ls -la app/build/outputs/apk/release/
