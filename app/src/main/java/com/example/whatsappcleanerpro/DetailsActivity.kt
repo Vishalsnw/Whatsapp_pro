@@ -10,8 +10,8 @@ import java.io.File
 class DetailsActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityDetailsBinding
-    private lateinit var filesList: MutableList<File>
-    private lateinit var adapter: FilesAdapter
+    private lateinit var filesList: MutableList<FileModel>
+    private lateinit var adapter: FileAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,8 +35,18 @@ class DetailsActivity : AppCompatActivity() {
             return
         }
 
-        filesList = categoryDir.listFiles()?.toMutableList() ?: mutableListOf()
-        adapter = FilesAdapter(filesList) { file ->
+        // Build a list of FileModel objects for the adapter
+        filesList = categoryDir.listFiles()
+            ?.map { file ->
+                FileModel(
+                    file = file,
+                    name = file.name,
+                    size = file.length(),
+                    path = file.absolutePath
+                )
+            }?.toMutableList() ?: mutableListOf()
+
+        adapter = FileAdapter(filesList) { file ->
             handleDeleteFile(file)
         }
 
@@ -44,12 +54,13 @@ class DetailsActivity : AppCompatActivity() {
         binding.detailsRecyclerView.adapter = adapter
     }
 
-    // Only one deleteFile method, no signature conflicts
+    // Called by adapter with File to delete
     private fun handleDeleteFile(file: File) {
-        if (file.delete()) {
+        val index = filesList.indexOfFirst { it.file == file }
+        if (index != -1 && file.delete()) {
             Toast.makeText(this, "Deleted: ${file.name}", Toast.LENGTH_SHORT).show()
-            filesList.remove(file)
-            adapter.notifyDataSetChanged()
+            filesList.removeAt(index)
+            adapter.notifyItemRemoved(index)
         } else {
             Toast.makeText(this, "Failed to delete: ${file.name}", Toast.LENGTH_SHORT).show()
         }
