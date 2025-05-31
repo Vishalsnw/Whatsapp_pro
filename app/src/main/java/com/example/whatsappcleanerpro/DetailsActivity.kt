@@ -37,14 +37,15 @@ class DetailsActivity : AppCompatActivity() {
 
         filesList = categoryDir.listFiles()?.toMutableList() ?: mutableListOf()
         adapter = FilesAdapter(filesList) { file ->
-            deleteFile(file)
+            handleDeleteFile(file)
         }
 
         binding.detailsRecyclerView.layoutManager = LinearLayoutManager(this)
         binding.detailsRecyclerView.adapter = adapter
     }
 
-    private fun deleteFile(file: File) {
+    // Only one deleteFile method, no signature conflicts
+    private fun handleDeleteFile(file: File) {
         if (file.delete()) {
             Toast.makeText(this, "Deleted: ${file.name}", Toast.LENGTH_SHORT).show()
             filesList.remove(file)
