@@ -2,21 +2,17 @@ plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
 }
-
 android {
     namespace 'com.example.whatsappcleanerpro'
     compileSdk 34
-
     defaultConfig {
         applicationId "com.example.whatsappcleanerpro"
         minSdk 21
         targetSdk 34
         versionCode 1
         versionName "1.0"
-
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
-
     signingConfigs {
         debug {
             storeFile file("$rootDir/debug.keystore")
@@ -25,7 +21,6 @@ android {
             keyPassword "android"
         }
     }
-
     buildTypes {
         release {
             minifyEnabled false
@@ -36,33 +31,27 @@ android {
             signingConfig signingConfigs.debug
         }
     }
-
     buildFeatures {
         viewBinding true
     }
-
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
         coreLibraryDesugaringEnabled true
     }
-
     kotlinOptions {
         jvmTarget = "17"
     }
-
     // 👇 This is the important fix for GitHub Actions Kotlin path issue
     sourceSets {
         main.java.srcDirs += 'src/main/java'
     }
 }
-
 dependencies {
     // Java 8+ desugaring support
-    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
-
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.6' // Updated version
     // Kotlin and AndroidX libraries
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.10"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.8.10" // Updated version
     implementation 'androidx.core:core-ktx:1.12.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.9.0'
