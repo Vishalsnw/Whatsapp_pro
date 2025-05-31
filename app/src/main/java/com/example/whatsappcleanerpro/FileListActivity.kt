@@ -26,20 +26,23 @@ class FileListActivity : AppCompatActivity() {
         val type = intent.getStringExtra("type") ?: return
         categoryTitle.text = "$type Files"
 
-        // Assumes FileScanner.getFilesForCategory(type) returns List<FileModel>
+        // Get files for this category/type
         fileList = FileScanner.getFilesForCategory(type).toMutableList()
-        // Pass onDeleteClicked lambda to FileAdapter if needed, else remove from constructor
-        adapter = FileAdapter(fileList, onDeleteClicked = { fileModel ->
-            fileModel.file.delete()
-            fileList.remove(fileModel)
-            adapter.notifyDataSetChanged()
-        })
+
+        adapter = FileAdapter(
+            files = fileList,
+            onDeleteClicked = { fileModel ->
+                fileModel.file.delete()
+                fileList.remove(fileModel)
+                adapter.notifyDataSetChanged()
+            }
+        )
 
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
 
         deleteButton.setOnClickListener {
-            val selected = adapter.getSelectedFiles()
+            val selected = adapter.getSelectedFiles() // This method must be implemented in FileAdapter!
             for (fileModel in selected) {
                 fileModel.file.delete()
                 fileList.remove(fileModel)
