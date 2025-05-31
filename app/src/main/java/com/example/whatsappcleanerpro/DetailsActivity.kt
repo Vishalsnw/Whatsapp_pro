@@ -35,7 +35,6 @@ class DetailsActivity : AppCompatActivity() {
             return
         }
 
-        // Build a list of FileModel objects for the adapter
         filesList = categoryDir.listFiles()
             ?.map { file ->
                 FileModel(
@@ -46,23 +45,18 @@ class DetailsActivity : AppCompatActivity() {
                 )
             }?.toMutableList() ?: mutableListOf()
 
-        adapter = FileAdapter(filesList) { file ->
-            handleDeleteFile(file)
+        adapter = FileAdapter(filesList) { fileModel ->
+            handleDeleteFile(fileModel)
         }
 
         binding.detailsRecyclerView.layoutManager = LinearLayoutManager(this)
         binding.detailsRecyclerView.adapter = adapter
-    }
-
-    // Called by adapter with File to delete
-    private fun handleDeleteFile(file: File) {
-        val index = filesList.indexOfFirst { it.file == file }
-        if (index != -1 && file.delete()) {
-            Toast.makeText(this, "Deleted: ${file.name}", Toast.LENGTH_SHORT).show()
+ fun handleDeleteFile(fileModel: FileModel) {
+        val index = filesList.indexOf(fileModel)
+        if (index != -1 && fileModel.file.delete()) {
+            Toast.makeText(this, "Deleted: ${fileModel.name}", Toast.LENGTH_SHORT).show()
             filesList.removeAt(index)
-            adapter.notifyItemRemoved(index)
-        } else {
-            Toast.makeText(this, "Failed to delete: ${file.name}", Toast.LENGTH_SHORT).show()
+            adapter.notify.makeText(this, "Failed to delete: ${fileModel.name}", Toast.LENGTH_SHORT).show()
         }
     }
-}
+    }
