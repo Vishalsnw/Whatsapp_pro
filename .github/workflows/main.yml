@@ -17,11 +17,12 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
+          cache: gradle
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v2
 
-      - name: Cache Gradle
+      - name: Cache Gradle packages
         uses: actions/cache@v3
         with:
           path: |
@@ -43,44 +44,106 @@ jobs:
             -dname "CN=Android Debug,O=Android,C=US"
 
       - name: Clean and refresh dependencies
-        run: ./gradlew clean --refresh-dependencies
-
-      - name: Build APK and save full log
         run: |
-          ./gradlew assembleRelease --stacktrace --debug --info > full_build_log.txt 2>&1 || true
-          tail -n 100 full_build_log.txt | grep -E "e: .*\.kt:[0-9]+:[0-9]+|error:|Unresolved reference:|cannot find symbol|Exception|Caused by:|Execution failed for task|resource linking failed|resource .+ not found" > errors_only.txt || true
-          if [ ! -s errors_only.txt ]; then
-            echo "No error patterns detected in the last 100 lines." > errors_only.txt
-            tail -n 20 full_build_log.txt >> errors_only.txt
-          fi
+          ./gradlew clean --refresh-dependencies --stacktrace
+          ./gradlew --stop
 
-      - name: Upload build logs on failure
-        if: failure()
+      - name: Build Debug APK first
+        run: |
+          ./gradlew assembleDebug --stacktrace --info || {
+            echo "Debug build failed. Checking for common issues..."
+            ./gradlew dependencies > dependencies.txt
+            echo "Dependencies written to dependencies.txt"
+            exit 1
+          }
+
+      - name: Build Release APK with detailed logging
+        id: build
+        continue-on-error: true
+        run: |
+          echo "Starting release build at $(date)"
+          ./gradlew assembleRelease --stacktrace --info > build_output.txt 2>&1
+          BUILD_SUCCESS=$?
+          
+          # Save detailed logs regardless of build result
+          {
+            echo "=== Build Environment ==="
+            echo "Date: $(date)"
+            echo "Java Version: $(java -version 2>&1)"
+            echo "Gradle Version: $(./gradlew --version 2>&1)"
+            echo ""
+            echo "=== Full Build Log ==="
+            cat build_output.txt
+          } > full_build_log.txt
+          
+          # Extract errors and important messages
+          {
+            echo "=== Build Errors and Warnings ==="
+            grep -E "error:|warning:|^e:|^w:|Failed|Exception|Caused by:" build_output.txt || true
+            echo ""
+            echo "=== Last 50 Lines of Build Output ==="
+            tail -n 50 build_output.txt
+          } > errors_only.txt
+          
+          exit $BUILD_SUCCESS
+
+      - name: Upload build logs
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Build-Failure-Log
+          name: Build-Logs-${{ github.run_number }}
           path: |
-            full_build_log.txt
+            *_log.txt
             errors_only.txt
+            dependencies.txt
+            app/build/reports/
+            app/build/outputs/logs/
+          retention-days: 7
 
-      - name: List APK output folder
-        run: ls -la app/build/outputs/apk/release/
+      - name: Check APK existence
+        id: check_apk
+        if: steps.build.outcome == 'success'
+        run: |
+          if [ -f "app/build/outputs/apk/release/app-release.apk" ]; then
+            echo "APK_EXISTS=true" >> $GITHUB_ENV
+          else
+            echo "APK file not found!"
+            echo "APK_EXISTS=false" >> $GITHUB_ENV
+            exit 1
+          fi
 
       - name: Zipalign and Sign APK
+        if: env.APK_EXISTS == 'true'
         run: |
           ZIPALIGN=$(find $ANDROID_HOME/build-tools -name zipalign | sort -r | head -n 1)
           APKSIGNER=$(find $ANDROID_HOME/build-tools -name apksigner | sort -r | head -n 1)
+          
           echo "Using zipalign: $ZIPALIGN"
           echo "Using apksigner: $APKSIGNER"
+          
           $ZIPALIGN -v -p 4 app/build/outputs/apk/release/app-release.apk aligned.apk
+          
           $APKSIGNER sign --ks .github/keystore/debug.keystore \
             --ks-pass pass:android \
             --key-pass pass:android \
             --out app-release-signed.apk \
             aligned.apk
+          
+          # Verify the signature
+          $APKSIGNER verify --verbose app-release-signed.apk
 
       - name: Upload final signed APK
+        if: env.APK_EXISTS == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: WhatsAppCleanerPro-Signed-APK
+          name: WhatsAppCleanerPro-Signed-APK-${{ github.run_number }}
           path: app-release-signed.apk
+          retention-days: 30
+
+      - name: Upload debug APK
+        if: env.APK_EXISTS != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Debug-APK-${{ github.run_number }}
+          path: app/build/outputs/apk/debug/*.apk
+          retention-days: 7
