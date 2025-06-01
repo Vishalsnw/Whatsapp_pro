@@ -38,17 +38,17 @@ jobs:
         run: |
           mkdir -p .github/keystore
           keytool -genkey -v -keystore .github/keystore/debug.keystore \
-            -alias androiddebugkey -storepass android -keypass android \
-            -keyalg RSA -keysize 2048 -validity 10000 \
-            -dname "CN=Android Debug,O=Android,C=US"
+            -alias androiddebug Debug,O=Android,C=US"
 
       - name: Clean and refresh dependencies
         run: ./gradlew clean --refresh-dependencies
 
       - name: Build APK and save full log
         run: |
-          ./gradlew assembleRelease --stacktrace --debug --info > full_build_log.txt 2>&1 || true
-          tail -n 100 full_build_log.txt | grep -E "e: .*\.kt:[0-9]+:[0-9]+|error:|Unresolved reference:|cannot find symbol|Exception|Caused by:|Execution failed for task|resource linking failed|resource .+ not found" > errors_only.txt || true
+          ./gradlew assembleRelease --stacktrace --debug --info > full_build_log.txt 2>&1:[0-9]+:[0-9]+|error:|Unresolved reference:|cannot find symbol|Exception|Caused by:|Execution failed for task|resource linking failed|resource .+ not found" > errors_only.txt || true
+          if [ ! -s errors_only.txt ]; then
+            echo errors_only.txt
+          fi
 
       - name: Upload build logs on failure
         if: failure()
@@ -59,17 +59,10 @@ jobs:
             full_build_log.txt
             errors_only.txt
 
-      - name: List APK output folder
-        run: ls -la app/build/outputs/apk/release/
-
-      - name: Zipalign and Sign APK
-        run: |
-          ZIPALIGN=$(find $ANDROID_HOME/build-tools -name zipalign | sort -r | head -n 1)
+      - name: List APK $ANDROID_HOME/build-tools -name zipalign | sort -r | head -n 1)
           APKSIGNER=$(find $ANDROID_HOME/build-tools -name apksigner | sort -r | head -n 1)
           echo "Using zipalign: $ZIPALIGN"
-          echo "Using apksigner: $APKSIGNER"
-          $ZIPALIGN -v -p 4 app/build/outputs/apk/release/app-release.apk aligned.apk
-          $APKSIGNER sign --ks .github/keystore/debug.keystore \
+          echo "Using apksignerks .github/keystore/debug.keystore \
             --ks-pass pass:android \
             --key-pass pass:android \
             --out app-release-signed.apk \
@@ -78,5 +71,4 @@ jobs:
       - name: Upload final signed APK
         uses: actions/upload-artifact@v4
         with:
-          name: WhatsAppCleanerPro-Signed-APK
-          path: app-release-signed.apk
+          name: WhatsAppCleanerPro-S
