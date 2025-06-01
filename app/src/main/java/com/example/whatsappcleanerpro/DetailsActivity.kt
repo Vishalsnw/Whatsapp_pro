@@ -22,7 +22,7 @@ class DetailsActivity : AppCompatActivity() {
         binding.detailsTitle.text = "$categoryName Files"
 
         val categoryPath = intent.getStringExtra("categoryPath")
-        if (categoryPath == null) {
+        if (categoryPath.isNullOrBlank()) {
             Toast.makeText(this, "Invalid category path", Toast.LENGTH_SHORT).show()
             finish()
             return
@@ -30,13 +30,13 @@ class DetailsActivity : AppCompatActivity() {
 
         val categoryDir = File(categoryPath)
         if (!categoryDir.exists() || !categoryDir.isDirectory) {
-            Toast.makeText(this, "No files found", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "No files found in $categoryPath", Toast.LENGTH_SHORT).show()
             finish()
             return
         }
 
         filesList = categoryDir.listFiles()
-            ?.filter { it.isFile }
+            ?.filter { it.isFile && !it.name.startsWith(".") && it.name != ".nomedia" }
             ?.map { file ->
                 FileModel(
                     file = file,
@@ -48,17 +48,18 @@ class DetailsActivity : AppCompatActivity() {
 
         adapter = FileAdapter(filesList) { fileModel ->
             val file = fileModel.file
+            val index = filesList.indexOf(fileModel)
+
             if (file != null && file.exists()) {
-                val index = filesList.indexOf(fileModel)
                 if (file.delete()) {
-                    Toast.makeText(this, "Deleted: ${fileModel.name}", Toast.LENGTH_SHORT).show()
                     filesList.removeAt(index)
                     adapter.notifyItemRemoved(index)
+                    Toast.makeText(this, "Deleted: ${fileModel.name}", Toast.LENGTH_SHORT).show()
                 } else {
                     Toast.makeText(this, "Failed to delete: ${fileModel.name}", Toast.LENGTH_SHORT).show()
                 }
             } else {
-                Toast.makeText(this, "File not found or null", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "File not found or already deleted", Toast.LENGTH_SHORT).show()
             }
         }
 
