@@ -51,12 +51,13 @@ class FileListActivity : AppCompatActivity() {
                 .getString(PREF_WHATSAPP_MEDIA_URI, null)
             if (savedUri == null) {
                 Toast.makeText(this, "Please select WhatsApp/Media folder", Toast.LENGTH_LONG).show()
-                val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
-                intent.addFlags(
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
-                            Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
-                )
+                val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+                    addFlags(
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                                Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+                                Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
+                    )
+                }
                 startActivityForResult(intent, REQUEST_CODE_PICK_WHATSAPP_MEDIA)
                 return
             } else {
@@ -86,12 +87,15 @@ class FileListActivity : AppCompatActivity() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && pickedMediaUri != null) {
                 deleteFilesSAF(selected)
             } else {
+                var deleted = 0
                 for (fileModel in selected) {
-                    fileModel.file?.delete()
-                    fileList.remove(fileModel)
+                    if (fileModel.file?.delete() == true) {
+                        fileList.remove(fileModel)
+                        deleted++
+                    }
                 }
                 adapter.notifyDataSetChanged()
-                Toast.makeText(this, "Deleted ${selected.size} file(s)", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Deleted $deleted file(s)", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -114,9 +118,11 @@ class FileListActivity : AppCompatActivity() {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && pickedMediaUri != null) {
                     deleteFilesSAF(listOf(fileModel))
                 } else {
-                    fileModel.file?.delete()
-                    fileList.remove(fileModel)
-                    adapter.notifyDataSetChanged()
+                    if (fileModel.file?.delete() == true) {
+                        fileList.remove(fileModel)
+                        adapter.notifyDataSetChanged()
+                        Toast.makeText(this, "Deleted: ${fileModel.name}", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
         )
@@ -158,7 +164,6 @@ class FileListActivity : AppCompatActivity() {
         }
     }
 
-    // Legacy storage permission check
     private fun hasStoragePermission(): Boolean {
         return ContextCompat.checkSelfPermission(
             this,
@@ -166,7 +171,6 @@ class FileListActivity : AppCompatActivity() {
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-    // Handle permission result for legacy Android
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
