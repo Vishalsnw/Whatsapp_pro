@@ -36,6 +36,7 @@ class DetailsActivity : AppCompatActivity() {
         }
 
         filesList = categoryDir.listFiles()
+            ?.filter { it.isFile }
             ?.map { file ->
                 FileModel(
                     file = file,
@@ -46,15 +47,20 @@ class DetailsActivity : AppCompatActivity() {
             }?.toMutableList() ?: mutableListOf()
 
         adapter = FileAdapter(filesList) { fileModel ->
-            val index = filesList.indexOf(fileModel)
-            if (index != -1 && fileModel.file.delete()) {
-                Toast.makeText(this, "Deleted: ${fileModel.name}", Toast.LENGTH_SHORT).show()
-                filesList.removeAt(index)
-                adapter.notifyItemRemoved(index)
+            val file = fileModel.file
+            if (file != null && file.exists()) {
+                val index = filesList.indexOf(fileModel)
+                if (file.delete()) {
+                    Toast.makeText(this, "Deleted: ${fileModel.name}", Toast.LENGTH_SHORT).show()
+                    filesList.removeAt(index)
+                    adapter.notifyItemRemoved(index)
+                } else {
+                    Toast.makeText(this, "Failed to delete: ${fileModel.name}", Toast.LENGTH_SHORT).show()
+                }
             } else {
-                Toast.makeText(this, "Failed to delete: ${fileModel.name}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "File not found or null", Toast.LENGTH_SHORT).show()
             }
-        } // <--- THIS IS THE KEY CLOSING BRACE!
+        }
 
         binding.detailsRecyclerView.layoutManager = LinearLayoutManager(this)
         binding.detailsRecyclerView.adapter = adapter
