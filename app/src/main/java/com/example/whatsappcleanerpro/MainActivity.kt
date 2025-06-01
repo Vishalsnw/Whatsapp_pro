@@ -1,11 +1,15 @@
 package com.example.whatsappcleanerpro
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.provider.Settings
 import android.widget.*
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.work.*
@@ -21,7 +25,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var storageProgress: ProgressBar
 
     private val workTag = "whatsapp_auto_clean"
-    private val PERMISSION_REQUEST_CODE = 1001
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,8 +37,10 @@ class MainActivity : AppCompatActivity() {
         storageProgress = findViewById(R.id.storageProgress)
 
         btnCleanCache.setOnClickListener {
-            if (checkAndRequestPermissions()) {
+            if (hasAllPermissions()) {
                 cleanWhatsAppCache()
+            } else {
+                requestNecessaryPermissions()
             }
         }
 
@@ -47,37 +52,41 @@ class MainActivity : AppCompatActivity() {
         updateAutoCleanButton()
     }
 
-    private fun checkAndRequestPermissions(): Boolean {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val permissions = arrayOf(
-                Manifest.permission.READ_EXTERNAL_STORAGE,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
-            )
-            val needed = permissions.filter {
-                ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
-            }
-            return if (needed.isNotEmpty()) {
-                requestPermissions(needed.toTypedArray(), PERMISSION_REQUEST_CODE)
-                false
-            } else {
-                true
-            }
+    private fun hasAllPermissions(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            Environment.isExternalStorageManager()
+        } else {
+            ContextCompat.checkSelfPermission(
+                this, Manifest.permission.READ_EXTERNAL_STORAGE
+            ) == PackageManager.PERMISSION_GRANTED
         }
-        return true
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == PERMISSION_REQUEST_CODE) {
-            if (grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
-                cleanWhatsAppCache()
-            } else {
-                tvStatus.text = "Permissions denied. Cannot clean cache."
+    private fun requestNecessaryPermissions() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            try {
+                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+                intent.data = Uri.parse("package:$packageName")
+                startActivity(intent)
+            } catch (e: Exception) {
+                val intent = Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
+                startActivity(intent)
             }
+        } else {
+            requestPermissionsLauncher.launch(arrayOf(
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+            ))
+        }
+    }
+
+    private val requestPermissionsLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        if (permissions.values.all { it }) {
+            cleanWhatsAppCache()
+        } else {
+            tvStatus.text = "Permissions denied. Cannot clean cache."
         }
     }
 
@@ -112,7 +121,7 @@ class MainActivity : AppCompatActivity() {
         ).map {
             deleteContents(File(Environment.getExternalStorageDirectory(), it))
         }.any { it }
-        tvStatus.text = if (deleted) "Cache cleaned." else "No files found."
+        tvStatus.text = if (deleted) "Cache cleaned." else "No files found or no permission."
         updateStorageInfo()
     }
 
@@ -151,8 +160,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun isAutoCleanEnabled(): Boolean {
-        val statuses = WorkManager.getInstance(applicationContext)
-            .getWorkInfosByTag(workTag).get()
-        return statuses.any { it.state == WorkInfo.State.ENQUEUED || it.state == WorkInfo.State.RUNNING }
+        return try {
+            val statuses = WorkManager.getInstance(applicationContext)
+                .getWorkInfosByTag(workTag)
+                .get()
+            statuses.any { it.state == WorkInfo.State.ENQUEUED || it.state == WorkInfo.State.RUNNING }
+        } catch (e: Exception) {
+            false
+        }
     }
 }
