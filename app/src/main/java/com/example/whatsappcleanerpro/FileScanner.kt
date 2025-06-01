@@ -10,6 +10,13 @@ import android.content.pm.PackageManager
 import androidx.documentfile.provider.DocumentFile
 import java.io.File
 
+data class FileModel(
+    val file: File?,       // For legacy mode, else null
+    val name: String,
+    val size: Long,
+    val path: String       // Absolute path or content Uri
+)
+
 object FileScanner {
 
     // Checks if legacy storage permission is granted
@@ -17,22 +24,14 @@ object FileScanner {
         return ContextCompat.checkSelfPermission(
             context,
             Manifest.permission.READ_EXTERNAL_STORAGE
-        ) == PackageManager.PERMISSION_GRANTED
-    }
-
-    // For Android 10 and below: Scan WhatsApp media using legacy storage
-    fun getWhatsAppMediaFilesLegacy(context: Context): List<FileModel> {
-        val files = mutableListOf<FileModel>()
-        if (!hasStoragePermission(context)) return files
+        ) == PackageManager if (!hasStoragePermission(context)) return files
 
         val root = Environment.getExternalStorageDirectory()
         val mediaRoot = File(root, "WhatsApp/Media")
 
         if (mediaRoot.exists() && mediaRoot.isDirectory) {
             mediaRoot.listFiles()?.forEach { subDir ->
-                if (subDir.isDirectory) {
-                    subDir.walkTopDown().forEach { file ->
-                        if (file.isFile) {
+                if (subDir.isfile.isFile) {
                             files.add(
                                 FileModel(
                                     file = file,
@@ -49,7 +48,75 @@ object FileScanner {
         return files
     }
 
-    // For Android 11+ (API 30+): Scan WhatsApp media using SAF
-    fun getWhatsAppMediaFilesFromSAF(context: Context, pickedFolderUri: Uri): List<FileModel> {
-        val files = mutableList.documents/tree/primary%3AWhatsApp%2FMedia"))
-startActivityForResult(intent, REQUEST_CODE_PICK_WHATSAPP_MEDIA)
+    // For Android 11+ (API<FileModel> {
+        val files = mutableListOf<FileModel>()
+        val pickedDir = DocumentFile.fromTreeUri(context, pickedFolderUri)
+        if (pickedDir != null && pickedDir.isDirectory) {
+            addFilesFromDocumentDir(pickedDir, files)
+        }
+        return files
+    }
+
+    private                addFilesFromDocumentDir(file, files)
+            } else if (file.isFile) {
+                files.add(
+                    FileModel(
+                        file = null,
+                        name = file.name ?: "",
+                        size = file.length(),
+                        path = file.uri.toString()
+                    )
+                )
+            }
+        }
+    }
+
+    //(context)) return files
+
+        val root = Environment.getExternalStorageDirectory()
+        val categoryFolders = mapOf(
+            "images" to "WhatsApp/Media/WhatsApp Images",
+            "video" to "WhatsApp/Media/WhatsApp Video",
+            "audio" to "WhatsApp/Media/WhatsApp folderName = categoryFolders[type.lowercase()]
+        folderName?.let {
+            val folder = File(root, it)
+            if (folder.exists() && folder.isDirectory) {
+                folder.walkTopDown().forEach { file ->
+                    if (file.isFile) {
+                        files.add(
+                            FileModel(
+                                file = )
+                    }
+                }
+            }
+        }
+        return files
+    }
+
+    // Category-based scan for SAF
+    fun getFilesForCategorySAF(context: Context, pickedFolderUri: Uri, type: String): List<FileModel> {
+        val files = mutableListOf<FileModel>()
+        val pickedDir = DocumentFile.fromTreeUri(context, pickedFolderUri)
+        if (pickedDir == null || !pickedDir.isDirectory) return files
+
+        val categoryFolders = mapOf(
+            "images" to "WhatsApp Images",
+            "video" to "WhatsApp Video",
+            "audio" to "WhatsApp Audio",
+            "documents" to "WhatsApp Documents",
+            "gifs" to "WhatsApp Animated Gifs",
+            "voice" to "WhatsApp Voice Notes",
+            "stickers" to "WhatsApp Stickers",
+            "wallpaper" to "WallPaper"
+        )
+
+        val subFolder = categoryFolders[type.lowercase()]
+        if (subFolder != null) {
+            val folder = pickedDir.findFile(subFolder)
+            if (folder != null && folder.isDirectory) {
+                addFilesFromDocumentDir(folder, files)
+            }
+        }
+        return files
+    }
+                            }
