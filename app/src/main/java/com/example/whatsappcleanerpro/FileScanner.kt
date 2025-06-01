@@ -10,15 +10,15 @@ import android.content.pm.PackageManager
 import androidx.documentfile.provider.DocumentFile
 
 data class FileModel(
-    val file: java.io.File?,       // For legacy mode, else null
+    val file: java.io.File?,       // Only for legacy access
     val name: String,
     val size: Long,
-    val path: String              // Absolute path or content Uri
+    val path: String               // File absolute path (legacy) or content Uri (SAF)
 )
 
 object FileScanner {
 
-    // Checks if legacy storage permission is granted
+    // Check if legacy read permission is granted
     fun hasReadPermission(context: Context): Boolean {
         return ContextCompat.checkSelfPermission(
             context,
@@ -26,11 +26,11 @@ object FileScanner {
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-    // For Android 10 and below: Scan WhatsApp/Media/[type] using legacy permissions
+    // Legacy method (Android 10 and below)
     fun getFilesForCategory(context: Context, type: String): List<FileModel> {
         val files = mutableListOf<FileModel>()
         val root = Environment.getExternalStorageDirectory()
-        
+
         val categoryFolders = mapOf(
             "images" to "WhatsApp/Media/WhatsApp Images",
             "video" to "WhatsApp/Media/WhatsApp Video",
@@ -41,24 +41,27 @@ object FileScanner {
 
         val folderName = categoryFolders[type.lowercase()]
         folderName?.let {
-            val folder = java.io.File(root, it)  // Corrected the file path access
+            val folder = java.io.File(root, it)
             if (folder.exists() && folder.isDirectory) {
                 folder.listFiles()?.forEach { file ->
-                    files.add(
-                        FileModel(
-                            file = file,
-                            name = file.name,
-                            size = file.length(),
-                            path = file.absolutePath
+                    if (file.isFile) {
+                        files.add(
+                            FileModel(
+                                file = file,
+                                name = file.name,
+                                size = file.length(),
+                                path = file.absolutePath
+                            )
                         )
-                    )
+                    }
                 }
             }
         }
+
         return files
     }
 
-    // For Android 11+ (SAF): Scan WhatsApp/Media/[type] using DocumentFile
+    // SAF method (Android 11+)
     fun getFilesForCategorySAF(context: Context, pickedFolderUri: Uri, type: String): List<FileModel> {
         val files = mutableListOf<FileModel>()
 
@@ -80,10 +83,11 @@ object FileScanner {
                 addFilesFromDocumentDir(subFolder, files)
             }
         }
+
         return files
     }
 
-    // Recursively add files from a DocumentFile directory
+    // Recursively scan files from a SAF directory
     private fun addFilesFromDocumentDir(dir: DocumentFile, files: MutableList<FileModel>) {
         dir.listFiles()?.forEach { file ->
             if (file.isDirectory) {
@@ -91,8 +95,8 @@ object FileScanner {
             } else if (file.isFile) {
                 files.add(
                     FileModel(
-                        file = null,  // can't get File for SAF
-                        name = file.name ?: "",
+                        file = null, // null for SAF access
+                        name = file.name ?: "Unnamed",
                         size = file.length(),
                         path = file.uri.toString()
                     )
