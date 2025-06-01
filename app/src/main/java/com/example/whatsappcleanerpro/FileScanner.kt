@@ -12,7 +12,7 @@ import java.io.File
 
 object FileScanner {
 
-    // Checks legacy permission for Android 10 and below
+    // Check permission for Android 10 and below
     fun hasReadPermission(context: Context): Boolean {
         return ContextCompat.checkSelfPermission(
             context,
@@ -20,17 +20,21 @@ object FileScanner {
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-    // For Android 10 and below - direct file access
+    // For Android 10 and below (legacy path logic)
     fun getFilesForCategory(context: Context, type: String): List<FileModel> {
         val files = mutableListOf<FileModel>()
-        val root = Environment.getExternalStorageDirectory()
+
+        // ✅ Updated root path: Android/media/com.whatsapp/WhatsApp
+        val root = File(Environment.getExternalStorageDirectory(), "Android/media/com.whatsapp/WhatsApp")
 
         val categoryFolders = mapOf(
-            "images" to "WhatsApp/Media/WhatsApp Images",
-            "video" to "WhatsApp/Media/WhatsApp Video",
-            "audio" to "WhatsApp/Media/WhatsApp Voice Notes",
-            "stickers" to "WhatsApp/Media/WhatsApp Stickers",
-            "wallpaper" to "WhatsApp/Media/Wallpaper"
+            "images" to "Media/WhatsApp Images",
+            "video" to "Media/WhatsApp Video",
+            "audio" to "Media/WhatsApp Audio",
+            "documents" to "Media/WhatsApp Documents",
+            "voice" to "Media/WhatsApp Voice Notes",
+            "stickers" to "Media/WhatsApp Stickers",
+            "gifs" to "Media/WhatsApp Animated Gifs"
         )
 
         val folderPath = categoryFolders[type.lowercase()]
@@ -58,7 +62,7 @@ object FileScanner {
         return files
     }
 
-    // For Android 11+ using SAF
+    // For Android 11+ using SAF (Storage Access Framework)
     fun getFilesForCategorySAF(context: Context, pickedFolderUri: Uri, type: String): List<FileModel> {
         val files = mutableListOf<FileModel>()
 
@@ -67,9 +71,9 @@ object FileScanner {
             "video" to "WhatsApp Video",
             "audio" to "WhatsApp Audio",
             "documents" to "WhatsApp Documents",
-            "gifs" to "WhatsApp Animated Gifs",
             "voice" to "WhatsApp Voice Notes",
-            "stickers" to "WhatsApp Stickers"
+            "stickers" to "WhatsApp Stickers",
+            "gifs" to "WhatsApp Animated Gifs"
         )
 
         val folderName = categoryFolders[type.lowercase()]
@@ -84,7 +88,7 @@ object FileScanner {
         return files
     }
 
-    // Recursive SAF scanner
+    // Recursive SAF directory scanner
     private fun addFilesFromDocumentDir(dir: DocumentFile, files: MutableList<FileModel>) {
         dir.listFiles()?.forEach { file ->
             if (file.isDirectory) {
@@ -96,7 +100,7 @@ object FileScanner {
             ) {
                 files.add(
                     FileModel(
-                        file = null, // SAF: can't use java.io.File
+                        file = null,
                         name = file.name ?: "Unnamed",
                         size = file.length(),
                         path = file.uri.toString()
