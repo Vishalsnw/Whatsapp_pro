@@ -26,7 +26,12 @@ jobs:
       - name: Generate debug keystore
         run: |
           mkdir -p .github/keystore
-          keytool -genkey -v -keystore .github/10000 \
+          keytool -genkey -v \
+            -keystore .github/keystore/debug.keystore \
+            -alias androiddebugkey \
+            -storepass android \
+            -keypass android \
+            -keyalg RSA -keysize 2048 -validity 10000 \
             -dname "CN=Android Debug,O=Android,C=US"
 
       - name: Build Release APK and extract errors
@@ -35,11 +40,19 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          ./gradlew assembleRelease --stackCaused by|Execution failed for task|resource linking failed|resource .+ not found" build_output.txt > errors_only.txt || true
+          ./gradlew assembleRelease --stacktrace --info > build_output.txt 2>&1
+
+          grep -E "e: .*\.kt:[0-9]+:[0-9]+|error:|Unresolved reference:|cannot find symbol|Exception|Caused by|Execution failed for task|resource linking failed|resource .+ not found" build_output.txt > errors_only.txt || true
 
           if [ ! -s errors_only.txt ]; then
             echo "No error patterns detected in the last 1000 lines." > errors_only.txt
-            tail -n -${{ github.run_number }}
+            tail -n 50 build_output.txt >> errors_only.txt
+          fi
+
+      - name: Upload error-only log
+        uses: actions/upload-artifact@v4
+        with:
+          name: Errors-Only-Log-${{ github.run_number }}
           path: errors_only.txt
           retention-days: 7
 
@@ -47,8 +60,16 @@ jobs:
         id: check_apk
         run: |
           if [ -f "app/build/outputs/apk/release/app-release.apk" ]; then
-            echo "APK_EXISTS=true actions/upload-artifact@v4
+            echo "APK_EXISTS=true" >> $GITHUB_ENV
+          else
+            echo "APK_EXISTS=false" >> $GITHUB_ENV
+            exit 1
+          fi
+
+      - name: Upload final APK if exists
+        if: env.APK_EXISTS == 'true'
+        uses: actions/upload-artifact@v4
         with:
           name: WhatsAppCleanerPro-Release-APK-${{ github.run_number }}
           path: app/build/outputs/apk/release/app-release.apk
-          retention-days: 30
+          retention-days: 30.
