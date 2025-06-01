@@ -2,17 +2,19 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.example.whatsappcleanerpro">
 
-    <!-- Storage permissions -->
+    <!-- ✅ Storage permissions -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
 
-    <!-- Foreground service -->
+    <!-- ✅ Foreground service support -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
-    <!-- Optional if using notification manager (targeting Android 13+) -->
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"
+    <!-- ✅ Optional for Android 13+ notifications -->
+    <uses-permission
+        android:name="android.permission.POST_NOTIFICATIONS"
         tools:targetApi="33" />
 
     <application
@@ -24,7 +26,7 @@
         android:theme="@style/Theme.WhatsAppCleanerPro"
         android:requestLegacyExternalStorage="true"> <!-- For Android 10 -->
 
-        <!-- Launcher activity -->
+        <!-- ✅ Launcher activity -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -34,23 +36,23 @@
             </intent-filter>
         </activity>
 
-        <!-- File list -->
+        <!-- ✅ File browsing -->
         <activity
             android:name=".FileListActivity"
             android:exported="false" />
 
-        <!-- File details -->
+        <!-- ✅ File details screen -->
         <activity
             android:name=".DetailsActivity"
             android:exported="false" />
 
-        <!-- Foreground service -->
+        <!-- ✅ Foreground Cleaner Service -->
         <service
             android:name=".CleanerService"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
 
-        <!-- Optional: File sharing via FileProvider -->
+        <!-- (Optional) For file sharing using FileProvider -->
         <!--
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -64,5 +66,4 @@
         -->
 
     </application>
-
 </manifest>
