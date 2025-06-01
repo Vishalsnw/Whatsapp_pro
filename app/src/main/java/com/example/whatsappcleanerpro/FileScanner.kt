@@ -8,96 +8,59 @@ import androidx.core.content.ContextCompat
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.documentfile.provider.DocumentFile
-import java.io.File
 
 data class FileModel(
-    val file: File?,       // For legacy mode, else null
+    val file: java.io.File?,       // For legacy mode, else null
     val name: String,
     val size: Long,
-    val path: String       // Absolute path or content Uri
+    val path: String              // Absolute path or content Uri
 )
 
 object FileScanner {
 
     // Checks if legacy storage permission is granted
-    fun hasStoragePermission(context: Context): Boolean {
+    fun hasReadPermission(context: Context): Boolean {
         return ContextCompat.checkSelfPermission(
             context,
             Manifest.permission.READ_EXTERNAL_STORAGE
-        ) == PackageManager if (!hasStoragePermission(context)) return files
-
-        val root = Environment.getExternalStorageDirectory()
-        val mediaRoot = File(root, "WhatsApp/Media")
-
-        if (mediaRoot.exists() && mediaRoot.isDirectory) {
-            mediaRoot.listFiles()?.forEach { subDir ->
-                if (subDir.isfile.isFile) {
-                            files.add(
-                                FileModel(
-                                    file = file,
-                                    name = file.name,
-                                    size = file.length(),
-                                    path = file.absolutePath
-                                )
-                            )
-                        }
-                    }
-                }
-            }
-        }
-        return files
+        ) == PackageManager.PERMISSION_GRANTED
     }
 
-    // For Android 11+ (API<FileModel> {
+    // For Android 10 and below: Scan WhatsApp/Media/[type] using legacy permissions
+    fun getFilesForCategory(context: Context, type: String): List<FileModel> {
         val files = mutableListOf<FileModel>()
-        val pickedDir = DocumentFile.fromTreeUri(context, pickedFolderUri)
-        if (pickedDir != null && pickedDir.isDirectory) {
-            addFilesFromDocumentDir(pickedDir, files)
-        }
-        return files
-    }
-
-    private                addFilesFromDocumentDir(file, files)
-            } else if (file.isFile) {
-                files.add(
-                    FileModel(
-                        file = null,
-                        name = file.name ?: "",
-                        size = file.length(),
-                        path = file.uri.toString()
-                    )
-                )
-            }
-        }
-    }
-
-    //(context)) return files
-
         val root = Environment.getExternalStorageDirectory()
+        
         val categoryFolders = mapOf(
             "images" to "WhatsApp/Media/WhatsApp Images",
             "video" to "WhatsApp/Media/WhatsApp Video",
-            "audio" to "WhatsApp/Media/WhatsApp folderName = categoryFolders[type.lowercase()]
+            "audio" to "WhatsApp/Media/WhatsApp Voice Notes",
+            "stickers" to "WhatsApp/Media/WhatsApp Stickers",
+            "wallpaper" to "WhatsApp/Media/Wallpaper"
+        )
+
+        val folderName = categoryFolders[type.lowercase()]
         folderName?.let {
-            val folder = File(root, it)
+            val folder = java.io.File(root, it)  // Corrected the file path access
             if (folder.exists() && folder.isDirectory) {
-                folder.walkTopDown().forEach { file ->
-                    if (file.isFile) {
-                        files.add(
-                            FileModel(
-                                file = )
-                    }
+                folder.listFiles()?.forEach { file ->
+                    files.add(
+                        FileModel(
+                            file = file,
+                            name = file.name,
+                            size = file.length(),
+                            path = file.absolutePath
+                        )
+                    )
                 }
             }
         }
         return files
     }
 
-    // Category-based scan for SAF
+    // For Android 11+ (SAF): Scan WhatsApp/Media/[type] using DocumentFile
     fun getFilesForCategorySAF(context: Context, pickedFolderUri: Uri, type: String): List<FileModel> {
         val files = mutableListOf<FileModel>()
-        val pickedDir = DocumentFile.fromTreeUri(context, pickedFolderUri)
-        if (pickedDir == null || !pickedDir.isDirectory) return files
 
         val categoryFolders = mapOf(
             "images" to "WhatsApp Images",
@@ -106,17 +69,35 @@ object FileScanner {
             "documents" to "WhatsApp Documents",
             "gifs" to "WhatsApp Animated Gifs",
             "voice" to "WhatsApp Voice Notes",
-            "stickers" to "WhatsApp Stickers",
-            "wallpaper" to "WallPaper"
+            "stickers" to "WhatsApp Stickers"
         )
 
-        val subFolder = categoryFolders[type.lowercase()]
-        if (subFolder != null) {
-            val folder = pickedDir.findFile(subFolder)
-            if (folder != null && folder.isDirectory) {
-                addFilesFromDocumentDir(folder, files)
+        val folderName = categoryFolders[type.lowercase()]
+        folderName?.let {
+            val pickedDir = DocumentFile.fromTreeUri(context, pickedFolderUri)
+            val subFolder = pickedDir?.findFile(it)
+            if (subFolder != null && subFolder.isDirectory) {
+                addFilesFromDocumentDir(subFolder, files)
             }
         }
         return files
     }
-                            }
+
+    // Recursively add files from a DocumentFile directory
+    private fun addFilesFromDocumentDir(dir: DocumentFile, files: MutableList<FileModel>) {
+        dir.listFiles()?.forEach { file ->
+            if (file.isDirectory) {
+                addFilesFromDocumentDir(file, files)
+            } else if (file.isFile) {
+                files.add(
+                    FileModel(
+                        file = null,  // can't get File for SAF
+                        name = file.name ?: "",
+                        size = file.length(),
+                        path = file.uri.toString()
+                    )
+                )
+            }
+        }
+    }
+}
