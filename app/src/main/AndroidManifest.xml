@@ -1,14 +1,19 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.whatsappcleanerpro">
 
-    <!-- Permissions -->
+    <!-- Storage permissions -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+
+    <!-- Foreground service -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
-    <!-- Optional for scoped storage bypass on Android 11 -->
+    <!-- Optional if using notification manager -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" 
+        tools:targetApi="33" />
+
     <application
         android:allowBackup="true"
         android:label="WhatsApp Cleaner Pro"
@@ -16,19 +21,19 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.WhatsAppCleanerPro"
-        android:requestLegacyExternalStorage="true"> <!-- Required for Android 10 -->
+        android:requestLegacyExternalStorage="true"> <!-- For Android 10 -->
 
-        <!-- Main Launcher Activity -->
+        <!-- Launcher -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <!-- File browsing / deletion activity -->
+        <!-- File display -->
         <activity
             android:name=".FileListActivity"
             android:exported="false" />
@@ -37,11 +42,24 @@
             android:name=".DetailsActivity"
             android:exported="false" />
 
-        <!-- Foreground Service -->
+        <!-- Foreground cleaner service -->
         <service
             android:name=".CleanerService"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
+
+        <!-- (Optional) Add if you use FileProvider for sharing files -->
+        <!--
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+        -->
 
     </application>
 
