@@ -16,42 +16,18 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: temurin
-          java-version: 17
-          cache: gradle
-
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v2
-
-      - name: Cache Gradle packages
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
+          java-version: /wrapper
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle
 
       - name: Grant execute permission for gradlew
-        run: chmod +x ./gradlew
-
-      - name: Generate debug keystore
-        run: |
-          mkdir -p .github/keystore
+        run: chmod +xkeystore
           keytool -genkey -v -keystore .github/keystore/debug.keystore \
             -alias androiddebugkey -storepass android -keypass android \
             -keyalg RSA -keysize 2048 -validity 10000 \
-            -dname "CN=Android Debug,O=Android,C=US"
-
-      - name: Clean and refresh dependencies
-        run: |
-          ./gradlew clean --refresh-dependencies --stacktrace
-          ./gradlew --stop
-
-      - name: Build Debug APK first
-        run: |
-          ./gradlew assembleDebug --stacktrace --info || {
-            echo "Debug build failed. Check errors_only.txt for details."
+            -dname "CN=Android Debug,O: |
+          ./gradlew assembleDebug echo "Debug build failed. Check errors_only.txt for details."
             exit 1
           }
 
@@ -59,20 +35,11 @@ jobs:
         id: build
         continue-on-error: true
         run: |
-          ./gradlew assembleRelease --stacktrace --info > build_output.txt 2>&1
-
-          grep -E "e: .*\.kt:[0-9]+:[0-9]+|error:|Unresolved reference:|cannot find symbol|Exception|Caused by|Execution failed for task|resource linking failed|resource .+ not found" build_output.txt > errors_only.txt || true
+          ./gradlew assembleRelease --stacktrace --info|resource linking failed|resource .+ not found" build_output.txt > errors_only.txt || true
 
           if [ ! -s errors_only.txt ]; then
             echo "No error patterns detected in the last 1000 lines." > errors_only.txt
-            tail -n 30 build_output.txt >> errors_only.txt
-          fi
-
-      - name: Upload error log only
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: Build-Errors-${{ github.run_number }}
+            tail -n 30 build_output.txt >> errors_only.txt github.run_number }}
           path: errors_only.txt
           retention-days: 7
 
@@ -80,29 +47,12 @@ jobs:
         id: check_apk
         if: steps.build.outcome == 'success'
         run: |
-          if [ -f "app/build/outputs/apk/release/app-release.apk" ]; then
-            echo "APK_EXISTS=true" >> $GITHUB_ENV
-          else
-            echo "APK file not found!"
-            echo "APK_EXISTS=false" >> $GITHUB_ENV
-            exit 1
-          fi
-
-      - name: Zipalign and Sign APK
-        if: env.APK_EXISTS == 'true'
+          if [ -f "app/build/outputs/apk/release/app-release.apk" 'true'
         run: |
           ZIPALIGN=$(find $ANDROID_HOME/build-tools -name zipalign | sort -r | head -n 1)
           APKSIGNER=$(find $ANDROID_HOME/build-tools -name apksigner | sort -r | head -n 1)
 
-          echo "Using zipalign: $ZIPALIGN"
-          echo "Using apksigner: $APKSIGNER"
-
-          $ZIPALIGN -v -p 4 app/build/outputs/apk/release/app-release.apk aligned.apk
-
-          $APKSIGNER sign --ks .github/keystore/debug.keystore \
-            --ks-pass pass:android \
-            --key-pass pass:android \
-            --out app-release-signed.apk \
+          echo "Using zipalign-signed.apk \
             aligned.apk
 
           $APKSIGNER verify --verbose app-release-signed.apk
@@ -111,12 +61,7 @@ jobs:
         if: env.APK_EXISTS == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: WhatsAppCleanerPro-Signed-APK-${{ github.run_number }}
-          path: app-release-signed.apk
-          retention-days: 30
-
-      - name: Upload debug APK if release failed
-        if: env.APK_EXISTS != 'true'
+          name: WhatsAppCleanerPro-Signed: env.APK_EXISTS != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: Debug-APK-${{ github.run_number }}
