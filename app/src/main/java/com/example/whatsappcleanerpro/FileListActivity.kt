@@ -10,6 +10,7 @@ import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.documentfile.provider.DocumentFile
@@ -22,6 +23,7 @@ class FileListActivity : AppCompatActivity() {
 
     companion object {
         private const val REQUEST_CODE_PICK_WHATSAPP_MEDIA = 101
+        private const val REQUEST_CODE_PERMISSION_STORAGE = 200
         private const val PREF_WHATSAPP_MEDIA_URI = "pref_whatsapp_media_uri"
     }
 
@@ -41,7 +43,7 @@ class FileListActivity : AppCompatActivity() {
         deleteButton = findViewById(R.id.deleteSelectedBtn)
         categoryTitle = findViewById(R.id.categoryTitle)
 
-        type = intent.getStringExtra("type") ?: return
+        type = intent.getStringExtra("type") ?: "media"
         categoryTitle.text = "$type Files"
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -62,9 +64,13 @@ class FileListActivity : AppCompatActivity() {
                 loadFilesSAF()
             }
         } else {
+            // Android 10 and below
             if (!hasStoragePermission()) {
-                Toast.makeText(this, "Storage permission required", Toast.LENGTH_LONG).show()
-                finish()
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
+                    REQUEST_CODE_PERMISSION_STORAGE
+                )
                 return
             }
             loadFilesLegacy()
@@ -72,6 +78,11 @@ class FileListActivity : AppCompatActivity() {
 
         deleteButton.setOnClickListener {
             val selected = adapter.getSelectedFiles()
+            if (selected.isEmpty()) {
+                Toast.makeText(this, "No files selected", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && pickedMediaUri != null) {
                 deleteFilesSAF(selected)
             } else {
@@ -80,6 +91,7 @@ class FileListActivity : AppCompatActivity() {
                     fileList.remove(fileModel)
                 }
                 adapter.notifyDataSetChanged()
+                Toast.makeText(this, "Deleted ${selected.size} file(s)", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -146,11 +158,28 @@ class FileListActivity : AppCompatActivity() {
         }
     }
 
-    // Permission check helper (previously missing)
-    private fun Context.hasStoragePermission(): Boolean {
+    // Legacy storage permission check
+    private fun hasStoragePermission(): Boolean {
         return ContextCompat.checkSelfPermission(
             this,
             Manifest.permission.READ_EXTERNAL_STORAGE
         ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    // Handle permission result for legacy Android
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_CODE_PERMISSION_STORAGE) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                loadFilesLegacy()
+            } else {
+                Toast.makeText(this, "Storage permission is required to view files", Toast.LENGTH_SHORT).show()
+                finish()
+            }
+        }
     }
 }
