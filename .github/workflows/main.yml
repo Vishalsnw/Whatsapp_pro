@@ -31,7 +31,7 @@ jobs:
           set -o pipefail
           ./gradlew assembleRelease --stacktrace --info > build_output.txt 2>&1 || true
 
-          grep -E "e: .*\.kt:[0-9]+:[0-9]+|error:|Unresolved reference:|cannot find symbol|Exception|Caused by|Execution failed true
+          grep -E "e: .*\.kt:[0-9]+:[0-9]+|error:|Unresolved reference:|cannot find symbol|Exception|Caused by|Execution failed for task|resource linking failed|resource .+ not found" build_output.txt > errors_only.txt || true
 
           if [ ! -s errors_only.txt ]; then
             echo "No error patterns detected in the last 1000 lines." > errors_only.txt
