@@ -22,15 +22,15 @@ import android.content.pm.PackageManager
 class FileListActivity : AppCompatActivity() {
 
     companion object {
-        private const val REQUEST_CODE_PICK_WHATSAPP_MEDIA = 101
+        private const val REQUEST_CODE_PICK_MEDIA_FOLDER = 101
         private const val REQUEST_CODE_PERMISSION_STORAGE = 200
-        private const val PREF_WHATSAPP_MEDIA_URI = "pref_whatsapp_media_uri"
+        private const val PREF_MEDIA_URI = "pref_whatsapp_media_uri"
     }
 
     private lateinit var recyclerView: RecyclerView
-    private lateinit var adapter: FileAdapter
     private lateinit var deleteButton: Button
     private lateinit var categoryTitle: TextView
+    private lateinit var adapter: FileAdapter
     private lateinit var fileList: MutableList<FileModel>
     private var pickedMediaUri: Uri? = null
     private var type: String = "media"
@@ -48,24 +48,23 @@ class FileListActivity : AppCompatActivity() {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val savedUri = getSharedPreferences("prefs", Context.MODE_PRIVATE)
-                .getString(PREF_WHATSAPP_MEDIA_URI, null)
+                .getString(PREF_MEDIA_URI, null)
             if (savedUri == null) {
-                Toast.makeText(this, "Please select WhatsApp/Media folder", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Please select WhatsApp folder inside /Android/media", Toast.LENGTH_LONG).show()
                 val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
                     addFlags(
                         Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                                Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
-                                Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
+                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+                        Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
                     )
                 }
-                startActivityForResult(intent, REQUEST_CODE_PICK_WHATSAPP_MEDIA)
+                startActivityForResult(intent, REQUEST_CODE_PICK_MEDIA_FOLDER)
                 return
             } else {
                 pickedMediaUri = Uri.parse(savedUri)
                 loadFilesSAF()
             }
         } else {
-            // Android 10 and below
             if (!hasStoragePermission()) {
                 ActivityCompat.requestPermissions(
                     this,
@@ -87,15 +86,15 @@ class FileListActivity : AppCompatActivity() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && pickedMediaUri != null) {
                 deleteFilesSAF(selected)
             } else {
-                var deleted = 0
-                for (fileModel in selected) {
-                    if (fileModel.file?.delete() == true) {
-                        fileList.remove(fileModel)
-                        deleted++
+                var deletedCount = 0
+                selected.forEach { model ->
+                    if (model.file?.delete() == true) {
+                        fileList.remove(model)
+                        deletedCount++
                     }
                 }
                 adapter.notifyDataSetChanged()
-                Toast.makeText(this, "Deleted $deleted file(s)", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Deleted $deletedCount file(s)", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -114,14 +113,14 @@ class FileListActivity : AppCompatActivity() {
     private fun setupAdapter() {
         adapter = FileAdapter(
             files = fileList,
-            onDeleteClicked = { fileModel ->
+            onDeleteClicked = { model ->
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && pickedMediaUri != null) {
-                    deleteFilesSAF(listOf(fileModel))
+                    deleteFilesSAF(listOf(model))
                 } else {
-                    if (fileModel.file?.delete() == true) {
-                        fileList.remove(fileModel)
+                    if (model.file?.delete() == true) {
+                        fileList.remove(model)
                         adapter.notifyDataSetChanged()
-                        Toast.makeText(this, "Deleted: ${fileModel.name}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "Deleted: ${model.name}", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -132,10 +131,10 @@ class FileListActivity : AppCompatActivity() {
 
     private fun deleteFilesSAF(files: List<FileModel>) {
         var deletedCount = 0
-        for (fileModel in files) {
-            val docFile = DocumentFile.fromSingleUri(this, Uri.parse(fileModel.path))
+        for (model in files) {
+            val docFile = DocumentFile.fromSingleUri(this, Uri.parse(model.path))
             if (docFile?.delete() == true) {
-                fileList.remove(fileModel)
+                fileList.remove(model)
                 deletedCount++
             }
         }
@@ -145,7 +144,7 @@ class FileListActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQUEST_CODE_PICK_WHATSAPP_MEDIA && resultCode == Activity.RESULT_OK) {
+        if (requestCode == REQUEST_CODE_PICK_MEDIA_FOLDER && resultCode == Activity.RESULT_OK) {
             val treeUri = data?.data
             if (treeUri != null) {
                 contentResolver.takePersistableUriPermission(
@@ -153,7 +152,7 @@ class FileListActivity : AppCompatActivity() {
                     Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                 )
                 getSharedPreferences("prefs", Context.MODE_PRIVATE).edit {
-                    putString(PREF_WHATSAPP_MEDIA_URI, treeUri.toString())
+                    putString(PREF_MEDIA_URI, treeUri.toString())
                 }
                 pickedMediaUri = treeUri
                 loadFilesSAF()
@@ -172,16 +171,14 @@ class FileListActivity : AppCompatActivity() {
     }
 
     override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
+        requestCode: Int, permissions: Array<out String>, grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQUEST_CODE_PERMISSION_STORAGE) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 loadFilesLegacy()
             } else {
-                Toast.makeText(this, "Storage permission is required to view files", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Storage permission is required", Toast.LENGTH_SHORT).show()
                 finish()
             }
         }
