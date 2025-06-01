@@ -36,7 +36,7 @@ class FileListActivity : AppCompatActivity() {
 
         recyclerView = findViewById(R.id.fileRecyclerView)
         deleteButton = findViewById(R.id.deleteSelectedBtn)
-        categoryTitle =.id.categoryTitle)
+        categoryTitle = findViewById(R.id.categoryTitle) // ← Fixed this line
 
         type = intent.getStringExtra("type") ?: return
         categoryTitle.text = "$type Files"
