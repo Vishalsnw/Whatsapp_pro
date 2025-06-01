@@ -28,7 +28,7 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os/*.gradle*', '**/gradle-wrapper.properties') }}
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle
 
@@ -41,7 +41,11 @@ jobs:
           keytool -genkey -v -keystore .github/keystore/debug.keystore \
             -alias androiddebugkey -storepass android -keypass android \
             -keyalg RSA -keysize 2048 -validity 10000 \
-            -dname "CN-dependencies --stacktrace
+            -dname "CN=Android Debug,O=Android,C=US"
+
+      - name: Clean and refresh dependencies
+        run: |
+          ./gradlew clean --refresh-dependencies --stacktrace
           ./gradlew --stop
 
       - name: Build Debug APK first
@@ -51,14 +55,24 @@ jobs:
             exit 1
           }
 
-      - name: Build Release "e: .*\.kt:[0-9]+:[0-9]+|error:|Unresolved reference:|cannot find symbol|Exception|Caused by|Execution failed for task|resource linking failed|resource .+ not found" build_output.txt > errors_only.txt || true
-          # If no errors, provide the last 30 lines for context
+      - name: Build Release APK and extract errors
+        id: build
+        continue-on-error: true
+        run: |
+          ./gradlew assembleRelease --stacktrace --info > build_output.txt 2>&1
+
+          grep -E "e: .*\.kt:[0-9]+:[0-9]+|error:|Unresolved reference:|cannot find symbol|Exception|Caused by|Execution failed for task|resource linking failed|resource .+ not found" build_output.txt > errors_only.txt || true
+
           if [ ! -s errors_only.txt ]; then
             echo "No error patterns detected in the last 1000 lines." > errors_only.txt
             tail -n 30 build_output.txt >> errors_only.txt
           fi
 
-      - name: Upload error log only github.run_number }}
+      - name: Upload error log only
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Build-Errors-${{ github.run_number }}
           path: errors_only.txt
           retention-days: 7
 
@@ -66,7 +80,8 @@ jobs:
         id: check_apk
         if: steps.build.outcome == 'success'
         run: |
-          if [ -f "app/build/outputs/apk/release/app-release.apk"=true" >> $GITHUB_ENV
+          if [ -f "app/build/outputs/apk/release/app-release.apk" ]; then
+            echo "APK_EXISTS=true" >> $GITHUB_ENV
           else
             echo "APK file not found!"
             echo "APK_EXISTS=false" >> $GITHUB_ENV
