@@ -25,7 +25,8 @@ jobs:
         uses: actions/cache@v3
         with:
           path: |
-            ~/./wrapper
+            ~/.gradle/caches
+            ~/.gradle/wrapper
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle
@@ -39,13 +40,17 @@ jobs:
           keytool -genkey -v -keystore .github/keystore/debug.keystore \
             -alias androiddebugkey -storepass android -keypass android \
             -keyalg RSA -keysize 2048 -validity 10000 \
-            -dname force fresh dependencies
+            -dname "CN=Android Debug,O=Android,C=US"
+
+      - name: Clean and refresh dependencies
         run: ./gradlew clean --refresh-dependencies
 
       - name: Build APK and save full log
         run: |
-          ./gradlew assembleRelease --stacktrace --debug --info > full_build_log.txt 2>&1 || (
-            echo "===== BUILD FAILED. Showing last 100 '(^e: .*\.(kt|java):[0-9]+:[0-9]+|error:|Unresolved reference:|cannot find symbol|Exception|Caused by:|Execution failed for task|resource linking failed|resource .+ not found)' full_build_log.txt > errors_only.txt || true (on failure)
+          ./gradlew assembleRelease --stacktrace --debug --info > full_build_log.txt 2>&1 || true
+          tail -n 100 full_build_log.txt | grep -E "e: .*\.kt:[0-9]+:[0-9]+|error:|Unresolved reference:|cannot find symbol|Exception|Caused by:|Execution failed for task|resource linking failed|resource .+ not found" > errors_only.txt || true
+
+      - name: Upload build logs on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
@@ -55,7 +60,9 @@ jobs:
             errors_only.txt
 
       - name: List APK output folder
-        run: ls -la app/build/outputs/apk and Sign APK
+        run: ls -la app/build/outputs/apk/release/
+
+      - name: Zipalign and Sign APK
         run: |
           ZIPALIGN=$(find $ANDROID_HOME/build-tools -name zipalign | sort -r | head -n 1)
           APKSIGNER=$(find $ANDROID_HOME/build-tools -name apksigner | sort -r | head -n 1)
