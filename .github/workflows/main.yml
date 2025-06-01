@@ -24,10 +24,7 @@ jobs:
       - name: Cache Gradle
         uses: actions/cache@v3
         with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          path key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle
 
@@ -35,20 +32,28 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Generate debug keystore
-        run: |
  mkdir -p .github/keystore
           keytool -genkey -v -keystore .github/keystore/debug.keystore \
             -alias androiddebugkey -storepass android -keypass android \
             -keyalg RSA -keysize 2048 -validity 10000 \
-            -dname --refresh-dependencies
+            -dname "CN=Android Debug,O=Android,C=US"
+
+      - name: Clean project and force fresh dependencies
+        run: ./gradlew clean --refresh-dependencies
 
       - name: Build APK and save full log
         run: |
           ./gradlew assembleRelease --stacktrace --debug --info > full_build_log.txt 2>&1 || (
             echo "===== BUILD FAILED. Showing last 100 lines of log ====="
-            tail -n 100 |
-          # Grep for lines that look like real errors
-          grep -E '(^e: .*\.(kt|java):[0-9]+:[0-9]+|error:|Unresolved reference:|cannot find symbol|Exception|Caused by:|Execution failed for task|resource linking failed -s errors_only.txt ]; then
+            tail -n 100 full_build_log.txt
+            exit 1
+          )
+
+      - name: Extract actual errors from build log
+        if: failure()
+        run: |
+          grep -E '(^e: .*\.(kt|java):[0-9]+:[0-9]+|error:|Unresolved reference:|cannot find symbol|Exception|Caused by:|Execution failed for task|resource linking failed|resource .+ not found)' full_build_log.txt > errors_only.txt || true
+          if [ ! -s errors_only.txt ]; then
             echo "No specific error lines found. Check full_build_log.txt for more details." > errors_only.txt
           fi
 
@@ -56,7 +61,12 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name:
+          name: Build-Failure-Log
+          path: |
+            full_build_log.txt
+            errors_only.txt
+
+      - name: List APK output folder
         run: ls -la app/build/outputs/apk/release/
 
       - name: Install zipalign and apksigner tools
@@ -66,11 +76,14 @@ jobs:
 
       - name: Zipalign and Sign APK
         run: |
-          ZIPALIGN=$(find $ANDROID/build-tools -name apksigner | sort -r | head -n 1)
+          ZIPALIGN=$(find $ANDROID_HOME/build-tools -name zipalign | sort -r | head -n 1)
+          APKSIGNER=$(find $ANDROID_HOME/build-tools -name apksigner | sort -r | head -n 1)
           echo "Using zipalign: $ZIPALIGN"
           echo "Using apksigner: $APKSIGNER"
-          $ZIPALIGN -v -p 4 app/build/outputs/apk/release/app-release.apk aligned.apk
-          $APKSIGNER sign --ksandroid \
+          $ZIPALIGN -v -p 4/build/outputs/apk/release/app-release.apk aligned.apk
+          $APKSIGNER sign --ks .github/keystore/debug.keystore \
+            --ks-pass pass:android \
+            --key-pass pass:android \
             --out app-release-signed.apk \
             aligned.apk
 
