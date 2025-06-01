@@ -29,7 +29,8 @@ class DetailsActivity : AppCompatActivity() {
         }
 
         val categoryDir = File(categoryPath)
-        if (!(this, "No files found", Toast.LENGTH_SHORT).show()
+        if (!categoryDir.exists() || !categoryDir.isDirectory) {
+            Toast.makeText(this, "No files found", Toast.LENGTH_SHORT).show()
             finish()
             return
         }
@@ -42,18 +43,16 @@ class DetailsActivity : AppCompatActivity() {
                     size = file.length(),
                     path = file.absolutePath
                 )
- adapter = FileAdapter(filesList) { fileModel ->
-            val index = filesList.indexOf(fileModel)
-            if (index != -1 && fileModel.file.delete()) {
-                Toast.makeText(this, "Deleted: ${fileModel.name}", Toast.LENGTH_SHORT).show()
-                filesList.removeAt(index)
-                adapter.notifyItemRemoved(index)
+            }?.toMutableList() ?: mutableListOf()
+
+        adapter = FileAdapter(filesList) { fileModel ->
+           (index)
             } else {
-                Toast "Failed to delete: ${fileModel.name}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Failed to delete: ${fileModel.name}", Toast.LENGTH_SHORT).show()
             }
         }
 
         binding.detailsRecyclerView.layoutManager = LinearLayoutManager(this)
         binding.detailsRecyclerView.adapter = adapter
     }
-            }
+}
