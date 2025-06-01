@@ -7,6 +7,7 @@ object FileScanner {
 
     fun getFilesForCategory(category: String): List<File> {
         val baseDir = File(Environment.getExternalStorageDirectory(), "WhatsApp/Media")
+
         val targetDir = when (category.lowercase()) {
             "images"       -> File(baseDir, "WhatsApp Images")
             "videos"       -> File(baseDir, "WhatsApp Video")
@@ -17,8 +18,10 @@ object FileScanner {
             else           -> baseDir
         }
 
+        if (!targetDir.exists() || !targetDir.isDirectory) return emptyList()
+
         return targetDir.walkTopDown()
-            .filter { it.isFile }
+            .filter { it.isFile && !it.name.startsWith(".") && it.name != ".nomedia" }
             .toList()
     }
 }
