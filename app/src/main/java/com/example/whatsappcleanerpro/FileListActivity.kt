@@ -10,10 +10,13 @@ import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.documentfile.provider.DocumentFile
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import android.Manifest
+import android.content.pm.PackageManager
 
 class FileListActivity : AppCompatActivity() {
 
@@ -36,17 +39,15 @@ class FileListActivity : AppCompatActivity() {
 
         recyclerView = findViewById(R.id.fileRecyclerView)
         deleteButton = findViewById(R.id.deleteSelectedBtn)
-        categoryTitle = findViewById(R.id.categoryTitle) // ← Fixed this line
+        categoryTitle = findViewById(R.id.categoryTitle)
 
         type = intent.getStringExtra("type") ?: return
         categoryTitle.text = "$type Files"
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            // Android 11+ SAF
             val savedUri = getSharedPreferences("prefs", Context.MODE_PRIVATE)
                 .getString(PREF_WHATSAPP_MEDIA_URI, null)
             if (savedUri == null) {
-                // Ask user to pick WhatsApp/Media folder
                 Toast.makeText(this, "Please select WhatsApp/Media folder", Toast.LENGTH_LONG).show()
                 val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
                 intent.addFlags(
@@ -61,8 +62,7 @@ class FileListActivity : AppCompatActivity() {
                 loadFilesSAF()
             }
         } else {
-            // Legacy storage
-            if (!FileScanner.hasStoragePermission(this)) {
+            if (!hasStoragePermission()) {
                 Toast.makeText(this, "Storage permission required", Toast.LENGTH_LONG).show()
                 finish()
                 return
@@ -112,7 +112,6 @@ class FileListActivity : AppCompatActivity() {
         recyclerView.adapter = adapter
     }
 
-    // SAF deletion
     private fun deleteFilesSAF(files: List<FileModel>) {
         var deletedCount = 0
         for (fileModel in files) {
@@ -131,12 +130,10 @@ class FileListActivity : AppCompatActivity() {
         if (requestCode == REQUEST_CODE_PICK_WHATSAPP_MEDIA && resultCode == Activity.RESULT_OK) {
             val treeUri = data?.data
             if (treeUri != null) {
-                // Persist permission
                 contentResolver.takePersistableUriPermission(
                     treeUri,
                     Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                 )
-                // Save to prefs
                 getSharedPreferences("prefs", Context.MODE_PRIVATE).edit {
                     putString(PREF_WHATSAPP_MEDIA_URI, treeUri.toString())
                 }
@@ -147,5 +144,13 @@ class FileListActivity : AppCompatActivity() {
                 finish()
             }
         }
+    }
+
+    // Permission check helper (previously missing)
+    private fun Context.hasStoragePermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        ) == PackageManager.PERMISSION_GRANTED
     }
 }
