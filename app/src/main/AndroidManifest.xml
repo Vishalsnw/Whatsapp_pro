@@ -1,19 +1,24 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.whatsappcleanerpro">
 
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <!-- Permissions -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
+    <!-- Optional for scoped storage bypass on Android 11 -->
     <application
         android:allowBackup="true"
         android:label="WhatsApp Cleaner Pro"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.WhatsAppCleanerPro">
+        android:theme="@style/Theme.WhatsAppCleanerPro"
+        android:requestLegacyExternalStorage="true"> <!-- Required for Android 10 -->
 
+        <!-- Main Launcher Activity -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -23,6 +28,16 @@
             </intent-filter>
         </activity>
 
+        <!-- File browsing / deletion activity -->
+        <activity
+            android:name=".FileListActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".DetailsActivity"
+            android:exported="false" />
+
+        <!-- Foreground Service -->
         <service
             android:name=".CleanerService"
             android:exported="false"
