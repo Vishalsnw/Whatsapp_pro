@@ -99,11 +99,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun getWhatsAppCacheSize(): Long {
-        val paths = listOf(
-            Environment.getExternalStorageDirectory().absolutePath + "/WhatsApp/Media",
-            Environment.getExternalStorageDirectory().absolutePath + "/WhatsApp/Cache"
+        val scopedPath = File(
+            Environment.getExternalStorageDirectory(),
+            "Android/media/com.whatsapp/WhatsApp"
         )
-        return paths.sumOf { getFolderSize(File(it)) }
+        return getFolderSize(scopedPath)
     }
 
     private fun getFolderSize(dir: File): Long {
@@ -115,12 +115,25 @@ class MainActivity : AppCompatActivity() {
 
     private fun cleanWhatsAppCache() {
         tvStatus.text = "Cleaning cache..."
+
+        val root = File(
+            Environment.getExternalStorageDirectory(),
+            "Android/media/com.whatsapp/WhatsApp"
+        )
+
         val deleted = listOf(
-            "/WhatsApp/Media",
-            "/WhatsApp/Cache"
+            "Media/WhatsApp Images",
+            "Media/WhatsApp Video",
+            "Media/WhatsApp Audio",
+            "Media/WhatsApp Documents",
+            "Media/WhatsApp Voice Notes",
+            "Media/WhatsApp Stickers",
+            "Media/WhatsApp Animated Gifs",
+            "Cache"
         ).map {
-            deleteContents(File(Environment.getExternalStorageDirectory(), it))
+            deleteContents(File(root, it))
         }.any { it }
+
         tvStatus.text = if (deleted) "Cache cleaned." else "No files found or no permission."
         updateStorageInfo()
     }
