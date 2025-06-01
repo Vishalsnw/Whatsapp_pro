@@ -25,9 +25,10 @@ jobs:
         uses: actions/cache@v3
         with:
           path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: $.os }}-gradle
+            ~/./wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle
 
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
@@ -35,29 +36,33 @@ jobs:
       - name: Generate debug keystore
         run: |
           mkdir -p .github/keystore
-          keytool -genkey -v -keystore .github/keystore dependencies
+          keytool -genkey -v -keystore .github/keystore/debug.keystore \
+            -alias androiddebugkey -storepass android -keypass android \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname force fresh dependencies
         run: ./gradlew clean --refresh-dependencies
 
       - name: Build APK and save full log
         run: |
           ./gradlew assembleRelease --stacktrace --debug --info > full_build_log.txt 2>&1 || (
-            echo "===== BUILD FAILED. Showing last 100 lines of '(^e: .*\.(kt|java):[0-9]+:[0-9]+|error:|Unresolved reference:|cannot find symbol|Exception|Caused by:|Execution failed for task|resource linking failed|resource .+ not found)' full_build_log.txt > errors_only.txt || true full_build_log.txt for more details." > errors_only.txt
-          fi
-
-      - name: Upload build log (on failure)
+            echo "===== BUILD FAILED. Showing last 100 '(^e: .*\.(kt|java):[0-9]+:[0-9]+|error:|Unresolved reference:|cannot find symbol|Exception|Caused by:|Execution failed for task|resource linking failed|resource .+ not found)' full_build_log.txt > errors_only.txt || true (on failure)
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: Build-Failure-Log
           path: |
             full_build_log.txt
-            and Sign APK
+            errors_only.txt
+
+      - name: List APK output folder
+        run: ls -la app/build/outputs/apk and Sign APK
         run: |
           ZIPALIGN=$(find $ANDROID_HOME/build-tools -name zipalign | sort -r | head -n 1)
           APKSIGNER=$(find $ANDROID_HOME/build-tools -name apksigner | sort -r | head -n 1)
           echo "Using zipalign: $ZIPALIGN"
           echo "Using apksigner: $APKSIGNER"
-          $ZIPALIGN -v - --ks .github/keystore/debug.keystore \
+          $ZIPALIGN -v -p 4 app/build/outputs/apk/release/app-release.apk aligned.apk
+          $APKSIGNER sign --ks .github/keystore/debug.keystore \
             --ks-pass pass:android \
             --key-pass pass:android \
             --out app-release-signed.apk \
@@ -66,4 +71,5 @@ jobs:
       - name: Upload final signed APK
         uses: actions/upload-artifact@v4
         with:
-          name:: app-release-signed.apk
+          name: WhatsAppCleanerPro-Signed-APK
+          path: app-release-signed.apk
