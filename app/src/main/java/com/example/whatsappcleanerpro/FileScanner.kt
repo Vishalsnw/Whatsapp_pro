@@ -9,11 +9,12 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.documentfile.provider.DocumentFile
 
+// Data class for file representation
 data class FileModel(
     val file: java.io.File?,       // Only for legacy access
     val name: String,
     val size: Long,
-    val path: String               // File absolute path (legacy) or content Uri (SAF)
+    val path: String               // Absolute path (legacy) or Uri string (SAF)
 )
 
 object FileScanner {
@@ -26,7 +27,7 @@ object FileScanner {
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-    // Legacy method (Android 10 and below)
+    // For Android 10 and below: read directly from filesystem
     fun getFilesForCategory(context: Context, type: String): List<FileModel> {
         val files = mutableListOf<FileModel>()
         val root = Environment.getExternalStorageDirectory()
@@ -61,7 +62,7 @@ object FileScanner {
         return files
     }
 
-    // SAF method (Android 11+)
+    // For Android 11 and above: read using SAF
     fun getFilesForCategorySAF(context: Context, pickedFolderUri: Uri, type: String): List<FileModel> {
         val files = mutableListOf<FileModel>()
 
@@ -87,7 +88,7 @@ object FileScanner {
         return files
     }
 
-    // Recursively scan files from a SAF directory
+    // Recursive SAF scanner
     private fun addFilesFromDocumentDir(dir: DocumentFile, files: MutableList<FileModel>) {
         dir.listFiles()?.forEach { file ->
             if (file.isDirectory) {
@@ -95,7 +96,7 @@ object FileScanner {
             } else if (file.isFile) {
                 files.add(
                     FileModel(
-                        file = null, // null for SAF access
+                        file = null,  // SAF: no access to java.io.File
                         name = file.name ?: "Unnamed",
                         size = file.length(),
                         path = file.uri.toString()
