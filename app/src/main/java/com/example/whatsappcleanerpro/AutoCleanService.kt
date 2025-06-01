@@ -22,11 +22,12 @@ class AutoCleanService : Service() {
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
-        startForeground(1, createNotification("WhatsApp Cleaner Pro is running"))
+        startForeground(1, createNotification("WhatsApp Cleaner is cleaning..."))
 
-        // Start the cleaning task in background
+        // Run clean task on background thread
         CoroutineScope(Dispatchers.IO).launch {
-            cleanWhatsAppFiles()
+            cleanWhatsAppScopedStorage()
+            stopSelf()
         }
     }
 
@@ -34,7 +35,7 @@ class AutoCleanService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "WhatsApp Cleaner Pro Service",
+                "WhatsApp Cleaner Background",
                 NotificationManager.IMPORTANCE_LOW
             )
             val manager = getSystemService(NotificationManager::class.java)
@@ -51,32 +52,52 @@ class AutoCleanService : Service() {
             .build()
     }
 
-    private fun cleanWhatsAppFiles() {
+    private fun cleanWhatsAppScopedStorage() {
         try {
-            // WhatsApp media folder path
-            val whatsappMedia = File(Environment.getExternalStorageDirectory(), "WhatsApp/Media")
+            val root = File(Environment.getExternalStorageDirectory(), "Android/media/com.whatsapp/WhatsApp")
 
-            if (whatsappMedia.exists() && whatsappMedia.isDirectory) {
-                deleteRecursive(whatsappMedia)
-                Log.d("AutoCleanService", "WhatsApp Media cleaned successfully")
+            val targets = listOf(
+                "Media/WhatsApp Images",
+                "Media/WhatsApp Video",
+                "Media/WhatsApp Audio",
+                "Media/WhatsApp Documents",
+                "Media/WhatsApp Voice Notes",
+                "Media/WhatsApp Stickers",
+                "Media/WhatsApp Animated Gifs",
+                "Cache"
+            )
+
+            var deletedAny = false
+
+            for (path in targets) {
+                val dir = File(root, path)
+                if (dir.exists() && dir.isDirectory) {
+                    val deleted = deleteRecursive(dir)
+                    Log.d("AutoCleanService", "Cleaned: $path → $deleted")
+                    if (deleted) deletedAny = true
+                } else {
+                    Log.d("AutoCleanService", "Not found: $path")
+                }
+            }
+
+            if (deletedAny) {
+                Log.d("AutoCleanService", "WhatsApp files cleaned successfully.")
             } else {
-                Log.d("AutoCleanService", "WhatsApp Media folder not found")
+                Log.d("AutoCleanService", "No files deleted (nothing found or no access).")
             }
         } catch (e: Exception) {
-            Log.e("AutoCleanService", "Error cleaning WhatsApp files: ${e.message}")
+            Log.e("AutoCleanService", "Cleanup error: ${e.message}", e)
         }
-
-        // Stop the service after cleaning
-        stopSelf()
     }
 
-    private fun deleteRecursive(fileOrDirectory: File) {
+    private fun deleteRecursive(fileOrDirectory: File): Boolean {
+        var success = false
         if (fileOrDirectory.isDirectory) {
             fileOrDirectory.listFiles()?.forEach {
-                deleteRecursive(it)
+                success = deleteRecursive(it) || success
             }
         }
-        fileOrDirectory.delete()
+        return fileOrDirectory.delete() || success
     }
 
     override fun onBind(intent: Intent?): IBinder? {
