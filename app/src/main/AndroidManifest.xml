@@ -1,4 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.example.whatsappcleanerpro">
 
     <!-- Storage permissions -->
@@ -10,8 +11,8 @@
     <!-- Foreground service -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
-    <!-- Optional if using notification manager -->
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" 
+    <!-- Optional if using notification manager (targeting Android 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"
         tools:targetApi="33" />
 
     <application
@@ -23,7 +24,7 @@
         android:theme="@style/Theme.WhatsAppCleanerPro"
         android:requestLegacyExternalStorage="true"> <!-- For Android 10 -->
 
-        <!-- Launcher -->
+        <!-- Launcher activity -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -33,22 +34,23 @@
             </intent-filter>
         </activity>
 
-        <!-- File display -->
+        <!-- File list -->
         <activity
             android:name=".FileListActivity"
             android:exported="false" />
 
+        <!-- File details -->
         <activity
             android:name=".DetailsActivity"
             android:exported="false" />
 
-        <!-- Foreground cleaner service -->
+        <!-- Foreground service -->
         <service
             android:name=".CleanerService"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
 
-        <!-- (Optional) Add if you use FileProvider for sharing files -->
+        <!-- Optional: File sharing via FileProvider -->
         <!--
         <provider
             android:name="androidx.core.content.FileProvider"
