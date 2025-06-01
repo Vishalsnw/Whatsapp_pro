@@ -2,7 +2,6 @@ package com.example.whatsappcleanerpro
 
 import android.content.Context
 import android.net.Uri
-import android.os.Build
 import android.os.Environment
 import android.Manifest
 import android.content.pm.PackageManager
@@ -20,12 +19,15 @@ object FileScanner {
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-    // For Android 10 and below (legacy path logic)
+    // For Android 10 and below (direct file access)
     fun getFilesForCategory(context: Context, type: String): List<FileModel> {
         val files = mutableListOf<FileModel>()
 
-        // ✅ Updated root path: Android/media/com.whatsapp/WhatsApp
-        val root = File(Environment.getExternalStorageDirectory(), "Android/media/com.whatsapp/WhatsApp")
+        // ✅ Correct root path for legacy access (common issue)
+        val root = File(
+            Environment.getExternalStorageDirectory(),
+            "Android/media/com.whatsapp/WhatsApp"
+        )
 
         val categoryFolders = mapOf(
             "images" to "Media/WhatsApp Images",
@@ -39,9 +41,9 @@ object FileScanner {
 
         val folderPath = categoryFolders[type.lowercase()]
         folderPath?.let {
-            val folder = File(root, it)
-            if (folder.exists() && folder.isDirectory) {
-                folder.listFiles()?.forEach { file ->
+            val targetDir = File(root, it)
+            if (targetDir.exists() && targetDir.isDirectory) {
+                targetDir.listFiles()?.forEach { file ->
                     if (file.isFile &&
                         !file.name.startsWith(".") &&
                         file.name != ".nomedia"
@@ -62,7 +64,7 @@ object FileScanner {
         return files
     }
 
-    // For Android 11+ using SAF (Storage Access Framework)
+    // Android 11+ SAF-based access
     fun getFilesForCategorySAF(context: Context, pickedFolderUri: Uri, type: String): List<FileModel> {
         val files = mutableListOf<FileModel>()
 
@@ -88,7 +90,7 @@ object FileScanner {
         return files
     }
 
-    // Recursive SAF directory scanner
+    // SAF recursive scanner
     private fun addFilesFromDocumentDir(dir: DocumentFile, files: MutableList<FileModel>) {
         dir.listFiles()?.forEach { file ->
             if (file.isDirectory) {
