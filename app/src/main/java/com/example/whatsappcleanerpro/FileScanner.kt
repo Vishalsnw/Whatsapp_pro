@@ -11,6 +11,7 @@ import java.io.File
 
 object FileScanner {
 
+    // Checks legacy permission for Android 10 and below
     fun hasReadPermission(context: Context): Boolean {
         return ContextCompat.checkSelfPermission(
             context,
@@ -18,6 +19,7 @@ object FileScanner {
         ) == PackageManager.PERMISSION_GRANTED
     }
 
+    // For Android 10 and below
     fun getFilesForCategory(context: Context, type: String): List<FileModel> {
         val files = mutableListOf<FileModel>()
         val root = Environment.getExternalStorageDirectory()
@@ -35,7 +37,7 @@ object FileScanner {
             val folder = File(root, it)
             if (folder.exists() && folder.isDirectory) {
                 folder.listFiles()?.forEach { file ->
-                    if (file.isFile) {
+                    if (file.isFile && !file.name.startsWith(".") && file.name != ".nomedia") {
                         files.add(
                             FileModel(
                                 file = file,
@@ -52,6 +54,7 @@ object FileScanner {
         return files
     }
 
+    // For Android 11+ using SAF (Storage Access Framework)
     fun getFilesForCategorySAF(context: Context, pickedFolderUri: Uri, type: String): List<FileModel> {
         val files = mutableListOf<FileModel>()
 
@@ -77,11 +80,12 @@ object FileScanner {
         return files
     }
 
+    // Recursive SAF scanner
     private fun addFilesFromDocumentDir(dir: DocumentFile, files: MutableList<FileModel>) {
         dir.listFiles()?.forEach { file ->
             if (file.isDirectory) {
                 addFilesFromDocumentDir(file, files)
-            } else if (file.isFile) {
+            } else if (file.isFile && !file.name.orEmpty().startsWith(".") && file.name != ".nomedia") {
                 files.add(
                     FileModel(
                         file = null,
