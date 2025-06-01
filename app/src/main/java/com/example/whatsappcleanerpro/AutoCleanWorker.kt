@@ -5,33 +5,47 @@ import android.os.Environment
 import androidx.work.Worker
 import androidx.work.WorkerParameters
 import java.io.File
+import android.util.Log
 
 class AutoCleanWorker(appContext: Context, workerParams: WorkerParameters) :
     Worker(appContext, workerParams) {
 
     override fun doWork(): Result {
         return try {
+            val root = File(Environment.getExternalStorageDirectory(), "Android/media/com.whatsapp/WhatsApp")
+
             val paths = listOf(
-                "/WhatsApp/Media",
-                "/WhatsApp/Cache"
+                "Media/WhatsApp Images",
+                "Media/WhatsApp Video",
+                "Media/WhatsApp Audio",
+                "Media/WhatsApp Documents",
+                "Media/WhatsApp Voice Notes",
+                "Media/WhatsApp Stickers",
+                "Media/WhatsApp Animated Gifs",
+                "Cache"
             )
-            var deleted = false
-            for (path in paths) {
-                val file = File(Environment.getExternalStorageDirectory(), path)
-                deleted = deleteContents(file) || deleted
+
+            var deletedAny = false
+            for (subPath in paths) {
+                val dir = File(root, subPath)
+                if (dir.exists() && dir.isDirectory) {
+                    val deleted = deleteContents(dir)
+                    Log.d("AutoCleanWorker", "Deleted contents in $subPath = $deleted")
+                    if (deleted) deletedAny = true
+                } else {
+                    Log.d("AutoCleanWorker", "Path not found: $subPath")
+                }
             }
 
-            // Optional: Add logs or local notification here
-
+            Log.d("AutoCleanWorker", if (deletedAny) "Auto clean success" else "Nothing deleted")
             Result.success()
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e("AutoCleanWorker", "Error during auto clean: ${e.message}", e)
             Result.failure()
         }
     }
 
     private fun deleteContents(dir: File): Boolean {
-        if (!dir.exists() || !dir.isDirectory) return false
         var success = false
         dir.listFiles()?.forEach {
             success = if (it.isDirectory) deleteContents(it) || success else it.delete() || success
