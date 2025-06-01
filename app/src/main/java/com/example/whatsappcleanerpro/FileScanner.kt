@@ -2,6 +2,7 @@ package com.example.whatsappcleanerpro
 
 import android.content.Context
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
 import android.Manifest
 import android.content.pm.PackageManager
@@ -19,7 +20,7 @@ object FileScanner {
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-    // For Android 10 and below
+    // For Android 10 and below - direct file access
     fun getFilesForCategory(context: Context, type: String): List<FileModel> {
         val files = mutableListOf<FileModel>()
         val root = Environment.getExternalStorageDirectory()
@@ -32,12 +33,15 @@ object FileScanner {
             "wallpaper" to "WhatsApp/Media/Wallpaper"
         )
 
-        val folderName = categoryFolders[type.lowercase()]
-        folderName?.let {
+        val folderPath = categoryFolders[type.lowercase()]
+        folderPath?.let {
             val folder = File(root, it)
             if (folder.exists() && folder.isDirectory) {
                 folder.listFiles()?.forEach { file ->
-                    if (file.isFile && !file.name.startsWith(".") && file.name != ".nomedia") {
+                    if (file.isFile &&
+                        !file.name.startsWith(".") &&
+                        file.name != ".nomedia"
+                    ) {
                         files.add(
                             FileModel(
                                 file = file,
@@ -54,7 +58,7 @@ object FileScanner {
         return files
     }
 
-    // For Android 11+ using SAF (Storage Access Framework)
+    // For Android 11+ using SAF
     fun getFilesForCategorySAF(context: Context, pickedFolderUri: Uri, type: String): List<FileModel> {
         val files = mutableListOf<FileModel>()
 
@@ -85,10 +89,14 @@ object FileScanner {
         dir.listFiles()?.forEach { file ->
             if (file.isDirectory) {
                 addFilesFromDocumentDir(file, files)
-            } else if (file.isFile && !file.name.orEmpty().startsWith(".") && file.name != ".nomedia") {
+            } else if (
+                file.isFile &&
+                !file.name.orEmpty().startsWith(".") &&
+                file.name != ".nomedia"
+            ) {
                 files.add(
                     FileModel(
-                        file = null,
+                        file = null, // SAF: can't use java.io.File
                         name = file.name ?: "Unnamed",
                         size = file.length(),
                         path = file.uri.toString()
