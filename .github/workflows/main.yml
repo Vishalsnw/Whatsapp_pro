@@ -40,13 +40,18 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          ./gradlew assembleRelease --stacktrace --info > build_output.txt 2>&1
+          ./gradlew assembleRelease --stacktrace --info > build_output.txt 2>&1 || true
 
-          grep -E "e: .*\.kt:[0-9]+:[0-9]+|error:|Unresolved reference:|cannot find symbol|Exception|Caused by|Execution failed for task|resource linking failed|resource .+ not found" build_output.txt > errors_only.txt || true
+          if [ -f build_output.txt ]; then
+            grep -E "e: .*\.kt:[0-9]+:[0-9]+|error:|Unresolved reference:|cannot find symbol|Exception|Caused by|Execution failed for task|resource linking failed|resource .+ not found" \
+              build_output.txt > errors_only.txt || true
 
-          if [ ! -s errors_only.txt ]; then
-            echo "No error patterns detected in the last 1000 lines." > errors_only.txt
-            tail -n 50 build_output.txt >> errors_only.txt
+            if [ ! -s errors_only.txt ]; then
+              echo "No error patterns detected in the last 1000 lines." > errors_only.txt
+              tail -n 50 build_output.txt >> errors_only.txt
+            fi
+          else
+            echo "Build log not found!" > errors_only.txt
           fi
 
       - name: Upload error-only log
@@ -72,4 +77,4 @@ jobs:
         with:
           name: WhatsAppCleanerPro-Release-APK-${{ github.run_number }}
           path: app/build/outputs/apk/release/app-release.apk
-          retention-days: 30.
+          retention-days: 30
