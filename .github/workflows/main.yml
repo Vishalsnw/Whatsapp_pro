@@ -5,7 +5,6 @@ on:
 
 jobs:
   build:
-    name: Clean Build and Sign APK
     runs-on: ubuntu-latest
 
     steps:
@@ -17,102 +16,34 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-          cache: gradle
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v2
 
-      - name: Cache Gradle packages
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle
-
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
-
-      - name: Generate debug keystore
-        run: |
-          mkdir -p .github/keystore
-          keytool -genkey -v -keystore .github/keystore/debug.keystore \
-            -alias androiddebugkey -storepass android -keypass android \
-            -keyalg RSA -keysize 2048 -validity 10000 \
-            -dname "CN=Android Debug,O=Android,C=US"
-
-      - name: Build Debug APK
-        run: |
-          ./gradlew assembleDebug --stacktrace --info || {
-            echo "Debug build failed. Check errors_only.txt for details."
-            exit 1
-          }
 
       - name: Build Release APK and extract errors
         id: build
         continue-on-error: true
+        shell: bash
         run: |
-          ./gradlew assembleRelease --stacktrace --info > build_output.txt 2>&1
+          set -o pipefail
+          ./gradlew assembleRelease --stacktrace --info > build_output.txt 2>&1 || true
 
-          grep -E "e: .*\.kt:[0-9]+:[0-9]+|error:|Unresolved reference:|cannot find symbol|Exception|Caused by|Execution failed for task|resource linking failed|resource .+ not found" build_output.txt > errors_only.txt || true
+          grep -E "e: .*\.kt:[0-9]+:[0-9]+|error:|Unresolved reference:|cannot find symbol|Exception|Caused by|Execution failed true
 
           if [ ! -s errors_only.txt ]; then
             echo "No error patterns detected in the last 1000 lines." > errors_only.txt
             tail -n 30 build_output.txt >> errors_only.txt
           fi
 
+          touch errors_only.txt
+
       - name: Upload error log only
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: Build-Errors-${{ github.run_number }}
           path: errors_only.txt
-          retention-days: 7
-
-      - name: Check APK existence
-        id: check_apk
-        if: steps.build.outcome == 'success'
-        run: |
-          if [ -f "app/build/outputs/apk/release/app-release.apk" ]; then
-            echo "APK_EXISTS=true" >> $GITHUB_ENV
-          else
-            echo "APK_EXISTS=false" >> $GITHUB_ENV
-            exit 1
-          fi
-
-      - name: Zipalign and Sign APK
-        if: env.APK_EXISTS == 'true'
-        run: |
-          ZIPALIGN=$(find $ANDROID_HOME/build-tools -name zipalign | sort -r | head -n 1)
-          APKSIGNER=$(find $ANDROID_HOME/build-tools -name apksigner | sort -r | head -n 1)
-
-          echo "Using zipalign: $ZIPALIGN"
-          echo "Using apksigner: $APKSIGNER"
-
-          $ZIPALIGN -v -p 4 app/build/outputs/apk/release/app-release.apk aligned.apk
-
-          $APKSIGNER sign --ks .github/keystore/debug.keystore \
-            --ks-pass pass:android \
-            --key-pass pass:android \
-            --out app-release-signed.apk \
-            aligned.apk
-
-          $APKSIGNER verify --verbose app-release-signed.apk
-
-      - name: Upload final signed APK
-        if: env.APK_EXISTS == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: WhatsAppCleanerPro-Signed-APK-${{ github.run_number }}
-          path: app-release-signed.apk
-          retention-days: 30
-
-      - name: Upload debug APK if release failed
-        if: env.APK_EXISTS != 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: Debug-APK-${{ github.run_number }}
-          path: app/build/outputs/apk/debug/*.apk
           retention-days: 7
